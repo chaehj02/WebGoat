@@ -2,11 +2,14 @@ pipeline {
     agent any 
 
     environment {
-        AWS_REGION = 'ap-northeast-2'
-        IMAGE_NAME = 'jenkins-demo'
-        ACCOUNT_ID = '159773342061'
-        ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    }
+    AWS_REGION = 'ap-northeast-2'
+    IMAGE_NAME = 'jenkins-demo'
+    ACCOUNT_ID = '159773342061'
+    ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')     // Jenkins credentials ID
+    AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key') // Jenkins credentials ID
+}
+
 
     stages {
         stage('Build JAR') {
