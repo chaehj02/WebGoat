@@ -1,15 +1,20 @@
-pipeline { 
+pipeline {
     agent any 
 
     environment {
         AWS_REGION = 'ap-northeast-2'
-        IMAGE_NAME = 'jenkins-demo'  // ECR에 만든 리포지토리 이름
-        ACCOUNT_ID = '159773342061'  // ← 여기에 본인 계정 ID 입력
+        IMAGE_NAME = 'jenkins-demo'
+        ACCOUNT_ID = '159773342061'
         ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
-    
 
     stages {
+        stage('Build JAR') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 sh 'docker build -t $IMAGE_NAME .'
