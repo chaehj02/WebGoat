@@ -7,14 +7,9 @@ pipeline {
         ACCOUNT_ID = '159773342061'  // ← 여기에 본인 계정 ID 입력
         ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
+    
 
-    stage('Checkout') {
-        steps {
-            git branch: 'develop', credentialsId: 'github-creds', url: 'https://github.com/chaehj02/WebGoat.git'
-        }
-    }
-
-
+    stages {
         stage('Docker Build') {
             steps {
                 sh 'docker build -t $IMAGE_NAME .'
