@@ -1,15 +1,12 @@
 pipeline {
-    agent any 
+    agent any
 
     environment {
-    AWS_REGION = 'ap-northeast-2'
-    IMAGE_NAME = 'jenkins-demo'
-    ACCOUNT_ID = '159773342061'
-    ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')     // Jenkins credentials ID
-    AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key') // Jenkins credentials ID
-}
-
+        AWS_REGION = 'ap-northeast-2'
+        IMAGE_NAME = 'jenkins-demo'
+        ACCOUNT_ID = '159773342061'
+        ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    }
 
     stages {
         stage('Build JAR') {
@@ -26,13 +23,19 @@ pipeline {
 
         stage('ECR Login') {
             steps {
-                sh '''
-                aws ecr get-login-password --region $AWS_REGION | \
-                docker login --username AWS --password-stdin $ECR_URL
-                '''
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                    aws ecr get-login-password --region $AWS_REGION | \
+                    docker login --username AWS --password-stdin $ECR_URL
+                    '''
+                }
             }
         }
-
 
         stage('Push to ECR') {
             steps {
