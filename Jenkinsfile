@@ -8,12 +8,12 @@ pipeline {
         ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git credentialsId: 'github-creds', url: 'https://github.com/chaehj02/WebGoat.git'
-            }
+    stage('Checkout') {
+        steps {
+            git branch: 'develop', credentialsId: 'github-creds', url: 'https://github.com/chaehj02/WebGoat.git'
         }
+    }
+
 
         stage('Docker Build') {
             steps {
