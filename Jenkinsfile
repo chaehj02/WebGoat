@@ -30,6 +30,7 @@ pipeline {
             }
         }
 
+
         stage('Push to ECR') {
             steps {
                 sh '''
