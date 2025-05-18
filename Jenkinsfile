@@ -1,41 +1,30 @@
 pipeline {
     agent any
 
-    environment {
-        AWS_REGION = 'ap-northeast-2'
-        IMAGE_NAME = 'jenkins-demo'  // ECR에 만든 리포지토리 이름
-        ACCOUNT_ID = '123456789012'  // ← 여기에 본인 계정 ID 입력
-        ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Start') {
             steps {
-                git credentialsId: 'github-creds', url: 'https://github.com/chaehj02/WebGoat.git'
+                echo '✅ Jenkins 파이프라인 테스트를 시작합니다.'
             }
         }
 
-        stage('Docker Build') {
+        stage('Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                echo '🔨 빌드 중...'
+                sh 'echo Hello, Jenkins!'
             }
         }
 
-        stage('ECR Login') {
+        stage('Test') {
             steps {
-                sh '''
-                aws ecr get-login-password --region $AWS_REGION | \
-                docker login --username AWS --password-stdin $ECR_URL
-                '''
+                echo '🧪 테스트 실행 중...'
+                sh 'echo Running tests...'
             }
         }
 
-        stage('Push to ECR') {
+        stage('Done') {
             steps {
-                sh '''
-                docker tag $IMAGE_NAME:latest $ECR_URL/$IMAGE_NAME:latest
-                docker push $ECR_URL/$IMAGE_NAME:latest
-                '''
+                echo '🎉 테스트 성공!'
             }
         }
     }
