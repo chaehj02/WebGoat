@@ -54,4 +54,19 @@ pipeline {
             echo "❌ Build or push failed. Check logs!"
         }
     }
+    stage('Deploy to ECS with CodeDeploy') {
+    steps {
+        script {
+            sh '''
+            aws deploy create-deployment \
+              --application-name webgoat-codedeploy \
+              --deployment-group-name webgoat-deploy-group \
+              --file-exists-behavior OVERWRITE \
+              --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+              --github-location repository=chaehj02/WebGoat,commitId=${GIT_COMMIT}
+            '''
+        }
+    }
+}
+
 }
