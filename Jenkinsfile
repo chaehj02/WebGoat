@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "ap-northeast-2"
         ECR_REPO = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
         IMAGE_TAG = "latest"
+        JAVA_HOME = "/opt/jdk-23"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
     }
 
     stages {
@@ -16,35 +17,38 @@ pipeline {
 
         stage('🔨 Build JAR') {
             steps {
-                sh './mvnw clean package -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('🐳 Docker Build') {
             steps {
-                sh 'docker build -t $ECR_REPO:$IMAGE_TAG .'
+                sh '''
+                docker build -t $ECR_REPO:$IMAGE_TAG .
+                '''
             }
         }
 
         stage('🔐 ECR Login') {
             steps {
                 sh '''
-                    aws ecr get-login-password --region $AWS_REGION \
-                    | docker login --username AWS --password-stdin $ECR_REPO
+                aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $ECR_REPO
                 '''
             }
         }
 
         stage('🚀 Push to ECR') {
             steps {
-                sh 'docker push $ECR_REPO:$IMAGE_TAG'
+                sh '''
+                docker push $ECR_REPO:$IMAGE_TAG
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "✅ Docker image pushed successfully to ECR!"
+            echo "✅ Successfully built and pushed to ECR!"
         }
         failure {
             echo "❌ Build or push failed. Check logs!"
