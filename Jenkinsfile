@@ -1,32 +1,53 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = "ap-northeast-2"
+        ECR_REPO = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
+        IMAGE_TAG = "latest"
+    }
+
     stages {
-        stage('Start') {
+        stage('📦 Checkout') {
             steps {
-                echo '✅ Jenkins 파이프라인 테스트를 시작합니다.'
+                checkout scm
             }
         }
 
-        stage('Build') {
+        stage('🔨 Build JAR') {
             steps {
-                echo '🔨 빌드 중...'
-                sh 'echo Hello, Jenkins!'
+                sh './mvnw clean package -DskipTests'
             }
         }
 
-        stage('Test') {
+        stage('🐳 Docker Build') {
             steps {
-                echo '🧪 테스트 실행 중...'
-                sh 'echo Running tests...'
+                sh 'docker build -t $ECR_REPO:$IMAGE_TAG .'
             }
         }
 
-        stage('Done') {
+        stage('🔐 ECR Login') {
             steps {
-                echo '🎉 테스트 성공!'
+                sh '''
+                    aws ecr get-login-password --region $AWS_REGION \
+                    | docker login --username AWS --password-stdin $ECR_REPO
+                '''
+            }
+        }
+
+        stage('🚀 Push to ECR') {
+            steps {
+                sh 'docker push $ECR_REPO:$IMAGE_TAG'
             }
         }
     }
-}
 
+    post {
+        success {
+            echo "✅ Docker image pushed successfully to ECR!"
+        }
+        failure {
+            echo "❌ Build or push failed. Check logs!"
+        }
+    }
+}
