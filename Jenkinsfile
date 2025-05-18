@@ -1,51 +1,31 @@
 pipeline {
     agent any
 
-    environment {
-        AWS_REGION = 'ap-northeast-2'
-        IMAGE_NAME = 'jenkins-demo'
-        ACCOUNT_ID = '159773342061'
-        ECR_URL = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    }
-
     stages {
-        stage('Build JAR') {
+        stage('Start') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                echo '✅ Jenkins 파이프라인 테스트를 시작합니다.'
             }
         }
 
-        stage('Docker Build') {
+        stage('Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                echo '🔨 빌드 중...'
+                sh 'echo Hello, Jenkins!'
             }
         }
 
-        stage('ECR Login') {
+        stage('Test') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
-                    sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-
-                    aws ecr get-login-password --region $AWS_REGION | \
-                    docker login --username AWS --password-stdin $ECR_URL
-                    '''
-                }
+                echo '🧪 테스트 실행 중...'
+                sh 'echo Running tests...'
             }
         }
 
-        stage('Push to ECR') {
+        stage('Done') {
             steps {
-                sh '''
-                docker tag $IMAGE_NAME:latest $ECR_URL/$IMAGE_NAME:latest
-                docker push $ECR_URL/$IMAGE_NAME:latest
-                '''
+                echo '🎉 테스트 성공!'
             }
         }
-
-        
+    }
 }
