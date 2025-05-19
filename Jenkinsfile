@@ -44,13 +44,10 @@ pipeline {
 
         stage('🚀 Push to ECR') {
             steps {
-                sh '''
-                docker push $ECR_REPO:$IMAGE_TAG
-                '''
+                sh 'docker push $ECR_REPO:$IMAGE_TAG'
             }
         }
 
-        // ✅ 신규 단계: taskdef.json 생성
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
@@ -82,14 +79,35 @@ pipeline {
             }
         }
 
-        // ✅ appspec.yaml + taskdef.json 번들 압축
+        stage('📄 Generate appspec.yaml') {
+            steps {
+                script {
+                    def taskDefArn = sh(
+                        script: "aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --region $REGION --output text",
+                        returnStdout: true
+                    ).trim()
+
+                    def appspec = """version: 1
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "${taskDefArn}"
+        LoadBalancerInfo:
+          ContainerName: "webgoat"
+          ContainerPort: 8080
+"""
+                    writeFile file: 'appspec.yaml', text: appspec
+                }
+            }
+        }
+
         stage('📦 Bundle for CodeDeploy') {
             steps {
                 sh 'zip -r $BUNDLE appspec.yaml Dockerfile taskdef.json'
             }
         }
 
-        // ✅ S3 업로드 및 CodeDeploy 트리거
         stage('🚀 Deploy via CodeDeploy') {
             steps {
                 sh '''
