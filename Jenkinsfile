@@ -14,6 +14,12 @@ pipeline {
             }
         }
 
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $ECR_REPO:$IMAGE_TAG .'
@@ -41,3 +47,4 @@ pipeline {
         }
     }
 }
+
