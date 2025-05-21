@@ -1,0 +1,25 @@
+{
+    "family": "webgoat-task-def",
+    "executionRoleArn": "arn:aws:iam::535052053335:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+      {
+        "name": "webgoat",
+        "image": "535052053335.dkr.ecr.ap-northeast-2.amazonaws.com/webgoat:latest",
+        "essential": true,
+        "portMappings": [
+          {
+            "containerPort": 8080,
+            "hostPort": 8080,
+            "protocol": "tcp"
+          }
+        ]
+      }
+    ],
+    "requiresCompatibilities": [
+      "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "3072"
+  }
+  
