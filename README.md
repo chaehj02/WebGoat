@@ -8,6 +8,7 @@
 [![Discussions](https://img.shields.io/github/discussions/WebGoat/WebGoat)](https://github.com/WebGoat/WebGoat/discussions)
 
 testing massage
+...
 
 # Introduction
 
