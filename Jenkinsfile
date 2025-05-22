@@ -46,13 +46,13 @@ pipeline {
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
 
-                        zip -r deploy.zip appspec.yaml taskdef.json
-                        aws s3 cp deploy.zip s3://webgoat-codedeploy-bucket-soobin/deploy.zip
+                        zip -r deploy2.zip appspec.yaml taskdef.json
+                        aws s3 cp deploy.zip s3://webgoat-codedeploy-bucket-soobin/deploy2.zip
 
                         aws deploy create-deployment \
                           --application-name webgoat-cd-app \
-                          --deployment-group-name webgoat-deploy-bluegreen \
-                          --s3-location bucket=webgoat-codedeploy-bucket-soobin,key=deploy.zip,bundleType=zip \
+                          --deployment-group-name webgoat-deploy-group \
+                          --s3-location bucket=webgoat-codedeploy-bucket-soobin,key=deploy2.zip,bundleType=zip \
                           --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
                           --file-exists-behavior OVERWRITE
                     '''
