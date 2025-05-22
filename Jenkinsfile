@@ -54,7 +54,6 @@ pipeline {
                           --deployment-group-name webgoat-deploy-group \
                           --s3-location bucket=webgoat-codedeploy-bucket-soobin,key=deploy2.zip,bundleType=zip \
                           --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-                          --file-exists-behavior OVERWRITE
                     '''
                 }
             }
