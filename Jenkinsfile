@@ -46,9 +46,6 @@ pipeline {
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set region $AWS_REGION
 
-                        zip -r deploy2.zip appspec.yaml taskdef.json
-                        aws s3 cp deploy2.zip s3://webgoat-codedeploy-bucket-soobin/deploy2.zip
-
                         aws deploy create-deployment \
                           --application-name webgoat-cd-app \
                           --deployment-group-name webgoat-deploy-group \
