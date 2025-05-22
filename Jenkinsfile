@@ -10,7 +10,7 @@ pipeline {
         DEPLOY_APP = "webgoat-cd-app"
         DEPLOY_GROUP = "webgoat-deploy-group"
         REGION = "ap-northeast-2"
-        BUNDLE = "deploy.zip"
+        BUNDLE = "deploy2.zip"
         ECR_REPO        // ECR에 푸시할 이미지 경로
 				IMAGE_TAG       // 태그명 (latest)
 				JAVA_HOME       // JDK 경로
