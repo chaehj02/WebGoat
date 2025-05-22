@@ -6,7 +6,7 @@ pipeline {
         IMAGE_TAG = "latest"
         JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-        S3_BUCKET = "webgoat-codedeploy-bucket-soobin "
+        S3_BUCKET = "webgoat-codedeploy-bucket-soobin"
         DEPLOY_APP = "webgoat-cd-app"
         DEPLOY_GROUP = "webgoat-deploy-group"
         REGION = "ap-northeast-2"
