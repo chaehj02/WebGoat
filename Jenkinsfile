@@ -20,6 +20,29 @@ pipeline {
             }
         }
 
+        stage('🔍 Static Analysis - Semgrep') {
+            steps {
+                sh '''
+                echo "[+] Running Semgrep..."
+                semgrep --config "p/owasp-top-ten" . || true
+                '''
+            }
+        }
+
+        stage('🧪 Dependency Check') {
+            steps {
+                sh '''
+                echo "[+] Running OWASP Dependency-Check..."
+                mkdir -p dependency-check-report
+                dependency-check.sh \
+                  --project "webgoat" \
+                  --scan . \
+                  --format HTML \
+                  --out dependency-check-report || true
+                '''
+            }
+        }
+
         stage('🔨 Build JAR') {
             steps {
                 sh 'mvn clean package -DskipTests'
@@ -126,7 +149,8 @@ Resources:
 
     post {
         success {
-            echo "✅ Successfully built, pushed, and deployed!"
+            archiveArtifacts artifacts: 'dependency-check-report/**', allowEmptyArchive: true
+            echo "✅ Successfully built, analyzed, pushed, and deployed!"
         }
         failure {
             echo "❌ Build or deployment failed. Check logs!"
