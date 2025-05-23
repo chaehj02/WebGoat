@@ -11,6 +11,7 @@ pipeline {
         DEPLOY_GROUP = "webgoat-deployment-group"
         REGION = "ap-northeast-2"
         BUNDLE = "webgoat-deploy-bundle.zip"
+        PATH = "/home/ec2-user/.local/bin:${env.PATH}"
     }
 
     stages {
@@ -29,19 +30,21 @@ pipeline {
             }
         }
 
-        stage('🧪 Dependency Check') {
-            steps {
-                sh '''
-                echo "[+] Running OWASP Dependency-Check..."
-                mkdir -p dependency-check-report
-                dependency-check.sh \
-                  --project "webgoat" \
-                  --scan . \
-                  --format HTML \
-                  --out dependency-check-report || true
-                '''
-            }
+       stage('🧪 Dependency Check') {
+        steps {
+            sh '''
+            echo "[+] Running OWASP Dependency-Check..."
+            mkdir -p dependency-check-report
+            dependency-check.sh \
+              --project "webgoat" \
+              --scan . \
+              --format HTML \
+              --out dependency-check-report \
+               --nvdApiKey $NVD_API_KEY || true
+            '''
         }
+    }
+
 
         stage('🔨 Build JAR') {
             steps {
