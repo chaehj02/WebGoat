@@ -5,7 +5,6 @@ pipeline {
         ECR_REPO = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
         IMAGE_TAG = "latest"
         JAVA_HOME = "/opt/jdk-23"
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         S3_BUCKET = "webgoat-deploy-bucket"
         DEPLOY_APP = "webgoat-cd-app"
         DEPLOY_GROUP = "webgoat-deployment-group"
