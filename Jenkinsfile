@@ -15,18 +15,30 @@ pipeline {
 
     stages {
         stage('📦 Checkout') {
+            // 현재 jenkins job이 연결된 git 저장소를 클론해오는 단계
+            // Jenkins에서는 scm (source code management)을 통해 소스코드를 가져옴
+            // checkout scm은 job이 연동된 git 저장소의 코드를 가져온다는 것
             steps {
                 checkout scm
             }
         }
 
         stage('🔨 Build JAR') {
+            // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
+            // mvn = Maven 명령어
+            // clean = 이전 빌드 산출물 삭제
+            // package = .jar 나 .war 파일을 생성 -> 파일 이름은 pom.xml에 정의된 값으로 자동 생성됨
+            // -DskipTests = 테스트 생략하고 빠르게 빌드만
+            // 이 단계가 java프로젝트를 실행 가능한 결과물로 만드는 핵심임
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('🐳 Docker Build') {
+            // 방금 만든 .jar 파일을 도커 컨테이너 이미지로 만듦
+            // 즉, WebGoat 애플리케이션을 Docker 안에 넣음
+            // 다시 말하면, .jar을 컨테이너로 포장하는 것!
             steps {
                 sh '''
                 docker build -t $ECR_REPO:$IMAGE_TAG .
