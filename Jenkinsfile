@@ -23,6 +23,16 @@ pipeline {
             }
         }
 
+        stage('SAST - Semgrep'){
+            steps{
+                sh '''
+                pip install semgrep
+                semgrep --config=auto . || exit 1
+                '''
+            }
+        }
+
+
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
             // mvn = Maven 명령어
