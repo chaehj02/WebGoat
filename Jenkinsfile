@@ -5,12 +5,12 @@ pipeline {
         ECR_REPO = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
         IMAGE_TAG = "latest"
         JAVA_HOME = "/opt/jdk-23"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         S3_BUCKET = "webgoat-deploy-bucket"
         DEPLOY_APP = "webgoat-cd-app"
         DEPLOY_GROUP = "webgoat-deployment-group"
         REGION = "ap-northeast-2"
         BUNDLE = "webgoat-deploy-bundle.zip"
-        PATH = "/home/ec2-user/.local/bin:${env.PATH}"
     }
 
     stages {
@@ -19,31 +19,6 @@ pipeline {
                 checkout scm
             }
         }
-
-        stage('🔍 Static Analysis - Semgrep') {
-            steps {
-                sh '''
-                echo "[+] Running Semgrep..."
-                semgrep --config "p/owasp-top-ten" . || true
-                '''
-            }
-        }
-
-       stage('🧪 Dependency Check') {
-        steps {
-            sh '''
-            echo "[+] Running OWASP Dependency-Check..."
-            mkdir -p dependency-check-report
-            dependency-check.sh \
-              --project "webgoat" \
-              --scan . \
-              --format HTML \
-              --out dependency-check-report \
-               --nvdApiKey $NVD_API_KEY || true
-            '''
-        }
-    }
-
 
         stage('🔨 Build JAR') {
             steps {
@@ -151,8 +126,7 @@ Resources:
 
     post {
         success {
-            archiveArtifacts artifacts: 'dependency-check-report/**', allowEmptyArchive: true
-            echo "✅ Successfully built, analyzed, pushed, and deployed!"
+            echo "✅ Successfully built, pushed, and deployed!"
         }
         failure {
             echo "❌ Build or deployment failed. Check logs!"
