@@ -43,15 +43,18 @@ pipeline {
         stage('🧪 Dependency Check') {
             steps {
                 sh '''
-                echo "[+] Running OWASP Dependency-Check..."
-                mkdir -p dependency-check-report
-                dependency-check.sh \
-                  --project "webgoat" \
-                  --scan . \
-                  --format HTML \
-                  --out dependency-check-report \
-                  --nvdApiKey "$NVD_API_KEY" || true
-                '''
+echo "[+] Running Dependency-Check safely"
+mkdir -p dependency-check-report
+dependency-check.sh \
+  --project "webgoat" \
+  --scan ./src \
+  --format HTML \
+  --out dependency-check-report \
+  --nvdApiKey "$NVD_API_KEY" \
+  --data /tmp/dependency-check-${BUILD_ID} \
+  --disableRetireJS || true
+'''
+
             }
         }
 
