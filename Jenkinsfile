@@ -5,7 +5,8 @@ pipeline {
         ECR_REPO        = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
         IMAGE_TAG       = "latest"
         JAVA_HOME       = "/opt/jdk-23"
-        PATH            = "/home/ec2-user/.local/bin:${JAVA_HOME}/bin:${env.PATH}"
+        PATH = "/usr/local/bin:/home/ec2-user/.local/bin:${JAVA_HOME}/bin:${env.PATH}"
+
 
         // 개선 1: NVD API Key 연동 (Jenkins Credentials에서 등록한 경우)
         NVD_API_KEY     = credentials('nvd-api-key')
