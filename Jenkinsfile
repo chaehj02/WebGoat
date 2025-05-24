@@ -26,8 +26,9 @@ pipeline {
         stage('SAST - Semgrep'){
             steps{
                 sh '''
-                pip install semgrep
-                semgrep --config=auto . || exit 1
+                curl -L https://github.com/returntocorp/semgrep/releases/latest/download/semgrep-linux-amd64 -o semgrep
+                chmod +x semgrep
+                ./semgrep --config=auto . || exit 1
                 '''
             }
         }
