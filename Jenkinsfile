@@ -45,11 +45,11 @@ pipeline {
                 echo "[+] Running OWASP Dependency-Check..."
                 mkdir -p dependency-check-report
                 dependency-check.sh \
-                  --project "$CONTAINER_NAME" \
+                  --project "webgoat" \
                   --scan . \
                   --format HTML \
                   --out dependency-check-report \
-                  --nvdApiKey $NVD_API_KEY || true
+                  --nvdApiKey "$NVD_API_KEY" || true
                 '''
             }
         }
