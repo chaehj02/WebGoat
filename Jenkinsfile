@@ -2,15 +2,25 @@ pipeline {
     agent any
 
     environment {
-        ECR_REPO = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
-        IMAGE_TAG = "latest"
-        JAVA_HOME = "/opt/jdk-23"
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-        S3_BUCKET = "webgoat-deploy-bucket"
-        DEPLOY_APP = "webgoat-cd-app"
-        DEPLOY_GROUP = "webgoat-deployment-group"
-        REGION = "ap-northeast-2"
-        BUNDLE = "webgoat-deploy-bundle.zip"
+        ECR_REPO        = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
+        IMAGE_TAG       = "latest"
+        JAVA_HOME       = "/opt/jdk-23"
+        PATH            = "/home/ec2-user/.local/bin:${JAVA_HOME}/bin:${env.PATH}"
+
+        // 개선 1: NVD API Key 연동 (Jenkins Credentials에서 등록한 경우)
+        NVD_API_KEY     = credentials('nvd-api-key')
+
+        // 개선 4: 리소스 이름 변수화
+        CONTAINER_NAME  = "webgoat"
+        CONTAINER_PORT  = "8080"
+        TASK_FAMILY     = "webgoat-taskdef"
+        EXEC_ROLE_ARN   = "arn:aws:iam::159773342061:role/ecsTaskExecutionRole"
+
+        S3_BUCKET       = "webgoat-deploy-bucket"
+        DEPLOY_APP      = "webgoat-cd-app"
+        DEPLOY_GROUP    = "webgoat-deployment-group"
+        REGION          = "ap-northeast-2"
+        BUNDLE          = "webgoat-deploy-bundle.zip"
     }
 
     stages {
@@ -35,10 +45,11 @@ pipeline {
                 echo "[+] Running OWASP Dependency-Check..."
                 mkdir -p dependency-check-report
                 dependency-check.sh \
-                  --project "webgoat" \
+                  --project "$CONTAINER_NAME" \
                   --scan . \
                   --format HTML \
-                  --out dependency-check-report || true
+                  --out dependency-check-report \
+                  --nvdApiKey $NVD_API_KEY || true
                 '''
             }
         }
@@ -75,18 +86,18 @@ pipeline {
             steps {
                 script {
                     def taskdef = """{
-  "family": "webgoat-taskdef",
+  "family": "${TASK_FAMILY}",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
-      "name": "webgoat",
+      "name": "${CONTAINER_NAME}",
       "image": "${ECR_REPO}:${IMAGE_TAG}",
       "memory": 512,
       "cpu": 256,
       "essential": true,
       "portMappings": [
         {
-          "containerPort": 8080,
+          "containerPort": ${CONTAINER_PORT},
           "protocol": "tcp"
         }
       ]
@@ -95,7 +106,7 @@ pipeline {
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::159773342061:role/ecsTaskExecutionRole"
+  "executionRoleArn": "${EXEC_ROLE_ARN}"
 }"""
                     writeFile file: 'taskdef.json', text: taskdef
                 }
@@ -117,8 +128,8 @@ Resources:
       Properties:
         TaskDefinition: "${taskDefArn}"
         LoadBalancerInfo:
-          ContainerName: "webgoat"
-          ContainerPort: 8080
+          ContainerName: "${CONTAINER_NAME}"
+          ContainerPort: ${CONTAINER_PORT}
 """
                     writeFile file: 'appspec.yaml', text: appspec
                 }
