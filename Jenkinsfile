@@ -11,6 +11,7 @@ pipeline {
         DEPLOY_GROUP = "webgoat-deploy-group"
         REGION = "ap-northeast-2"
         BUNDLE = "deploy2.zip"
+        SONARQUBE_ENV = "WH_sonarqube"
     }
 
     stages {
@@ -23,16 +24,20 @@ pipeline {
             }
         }
 
-        stage('SAST - Semgrep'){
-            steps{
-                sh '''
-                curl -L https://github.com/returntocorp/semgrep/releases/latest/download/semgrep-linux-amd64 -o semgrep
-                chmod +x semgrep
-                ./semgrep --config=auto . || exit 1
-                '''
+
+        stage('🧪 SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=webgoat \
+                      -Dsonar.sources=. \
+                      -Dsonar.java.binaries=target \
+                      -Dsonar.host.url=http://13.209.7.249:9000
+                    '''
+                }
             }
         }
-
 
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
