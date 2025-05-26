@@ -29,10 +29,10 @@ pipeline {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
-                    sonar-scanner \
-                      -Dsonar.projectKey=webgoat \
-                      -Dsonar.sources=. \
-                      -Dsonar.java.binaries=target
+                    /opt/sonar-scanner/bin/sonar-scanner \
+                        -Dsonar.projectKey=webgoat \
+                        -Dsonar.sources=. \
+                        -Dsonar.java.binaries=target
                     '''
                 }
             }
