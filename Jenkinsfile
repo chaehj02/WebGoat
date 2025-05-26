@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        sonarQubeScanner 'default'
-    }          
-
     environment {
         ECR_REPO = "535052053335.dkr.ecr.ap-northeast-2.amazonaws.com/wh_1/devpos"
         IMAGE_TAG = "latest"
@@ -36,8 +32,7 @@ pipeline {
                     sonar-scanner \
                       -Dsonar.projectKey=webgoat \
                       -Dsonar.sources=. \
-                      -Dsonar.java.binaries=target \
-                      -Dsonar.host.url=http://13.209.7.249:9000
+                      -Dsonar.java.binaries=target
                     '''
                 }
             }
