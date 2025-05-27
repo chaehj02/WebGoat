@@ -31,8 +31,8 @@ pipeline {
                     sh '''
                     /opt/sonar-scanner/bin/sonar-scanner \
                         -Dsonar.projectKey=webgoat \
-                        -Dsonar.sources=webgoat-server/src/main/java \
-                        -Dsonar.java.binaries=webgoat-server/target/classes
+                        -Dsonar.sources=src/main/java \
+                        -Dsonar.java.binaries=target/classes
                     '''
                 }
             }
