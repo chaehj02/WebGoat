@@ -11,7 +11,7 @@ pipeline {
         DEPLOY_GROUP = "webgoat-deploy-group"
         REGION = "ap-northeast-2"
         BUNDLE = "deploy2.zip"
-        SONARQUBE_ENV = "WH_sonarqube_in_Jenkins"
+        SONARQUBE_ENV = "WH_sonarqube"
     }
 
     stages {
