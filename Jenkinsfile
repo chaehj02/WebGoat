@@ -26,7 +26,7 @@ pipeline {
 
         // 웹훅 다시 설정
         // sonarQube 규칙 설정
-        // 인스턴스 바꿔서 시작
+        // 인스턴스 바꿔서 시작 경로수정..
         stage('🧪 SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
