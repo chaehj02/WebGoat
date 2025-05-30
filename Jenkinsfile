@@ -25,6 +25,7 @@ pipeline {
         }
 
         // 웹훅 다시 설정
+        // sonarQube 규칙 설정
         stage('🧪 SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
