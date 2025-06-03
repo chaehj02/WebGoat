@@ -11,7 +11,7 @@ pipeline {
         DEPLOY_GROUP = "webgoat-deploy-group"
         REGION = "ap-northeast-2"
         BUNDLE = "deploy2.zip"
-        SONARQUBE_ENV = "WH_sonarqube"
+        //SONARQUBE_ENV = "WH_sonarqube"
     }
 
     stages {
@@ -27,10 +27,11 @@ pipeline {
         // 웹훅 다시 설정
         // sonarQube 규칙 설정
         // 인스턴스 바꿔서 시작 경로수정..
-        stage('🧪 SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh '''
+    /*    
+      stage('🧪 SonarQube Analysis') {
+          steps {
+              withSonarQubeEnv("${SONARQUBE_ENV}") {
+                  sh '''
                     /opt/sonar-scanner/bin/sonar-scanner \
                         -Dsonar.projectKey=webgoat \
                         -Dsonar.sources=. \
@@ -39,7 +40,7 @@ pipeline {
                 }
             }
         }
-
+    */
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
             // mvn = Maven 명령어
