@@ -12,6 +12,7 @@ pipeline {
         REGION = "ap-northeast-2"
         BUNDLE = "deploy2.zip"
         SONARQUBE_ENV = "WH_sonarqube"
+        SEMGREP_APP_TOKEN = '1fa9a92f765caf0f83167fb58cd9a4c865bd069ee0809260f1b0497d3f0ed73c'
     }
 
     stages {
@@ -24,15 +25,12 @@ pipeline {
             }
         }
 
-        // 웹훅 다시 설정
-        // sonarQube 규칙 설정
-        // 인스턴스 바꿔서 시작 경로수정..
-        
-    stage('🔍 Semgrep SAST') {
+
         steps {
             sshagent(['semgrep-ssh']) {
                 sh '''
                 ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 '
+                    export SEMGREP_APP_TOKEN=1fa9a92f765caf0f83167fb58cd9a4c865bd069ee0809260f1b0497d3f0ed73c &&
                     rm -rf /tmp/webgoat &&
                     git clone https://github.com/Watermelonlatte/WebGoat.git /tmp/webgoat &&
                     cd /tmp/webgoat &&
@@ -41,7 +39,6 @@ pipeline {
                 '''
             }
         }
-    }
 
 
 
