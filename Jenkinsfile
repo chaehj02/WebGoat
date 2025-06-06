@@ -34,7 +34,7 @@ pipeline {
                     rm -rf /tmp/webgoat &&
                     git clone https://github.com/Watermelonlatte/WebGoat.git /tmp/webgoat &&
                     cd /tmp/webgoat &&
-                    semgrep ci --config auto || true 
+                    semgrep ci || true 
                 '
                 '''
             }
