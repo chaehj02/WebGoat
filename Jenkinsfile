@@ -28,17 +28,20 @@ pipeline {
         // sonarQube 규칙 설정
         // 인스턴스 바꿔서 시작 경로수정..
         
-        stage('🔍 Semgrep SAST') {
-            steps {
+    stage('🔍 Semgrep SAST') {
+        steps {
+            sshagent(['semgrep-ssh']) {
                 sh '''
-                    ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 '
-                    cd /home/ec2-user/webgoat &&
-                    git pull &&
+                    ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 << 'EOF'
+                    cd /home/ec2-user/webgoat
+                    git pull
                     semgrep ci --config auto --publish-token 1fa9a92f765caf0f83167fb58cd9a4c865bd069ee0809260f1b0497d3f0ed73c
-                    '
-                    '''
+                    EOF
+                '''
             }
         }
+    }
+
 
     
         stage('🔨 Build JAR') {
