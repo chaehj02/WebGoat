@@ -31,17 +31,18 @@ pipeline {
     stage('🔍 Semgrep SAST') {
         steps {
             sshagent(['semgrep-ssh']) {
-                sh """
-                    ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 <<EOF
-                    rm -rf /tmp/webgoat || true
-                    git clone https://github.com/Watermelonlatte/WebGoat.git /tmp/webgoat
-                    cd /tmp/webgoat
+                sh '''
+                ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 '
+                    rm -rf /tmp/webgoat &&
+                    git clone https://github.com/Watermelonlatte/WebGoat.git /tmp/webgoat &&
+                    cd /tmp/webgoat &&
                     semgrep ci --config auto
-    EOF
-                """
+                '
+                '''
             }
         }
     }
+
 
 
 
