@@ -33,14 +33,16 @@ pipeline {
             sshagent(['semgrep-ssh']) {
                 sh '''
                     ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 << 'EOF'
-                    cd /home/ec2-user/webgoat
-                    git pull
+                    rm -rf /tmp/webgoat || true
+                    git clone https://github.com/Watermelonlatte/WebGoat.git /tmp/webgoat
+                    cd /tmp/webgoat
                     semgrep ci --config auto --publish-token 1fa9a92f765caf0f83167fb58cd9a4c865bd069ee0809260f1b0497d3f0ed73c
                     EOF
                 '''
             }
         }
     }
+
 
 
     
