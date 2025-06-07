@@ -25,19 +25,18 @@ pipeline {
         }
 
 
-        stage('🔍 Semgrep Cloud via API') {
-        steps {
-            sh '''
-            curl -s -X POST http://43.201.63.122:5000/run-semgrep \
-            -H "Content-Type: application/json" \
-            -H "X-API-KEY: mysupersecurekey123" \
-            -d '{
-                "repo_url": "https://github.com/Watermelonlatte/WebGoat.git",
-                "branch": "develop"
-              }'
-            '''
-        }
-        }
+        stage('🧪 SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh '''
+                    /opt/sonar-scanner/bin/sonar-scanner \
+                        -Dsonar.projectKey=webgoat \
+                        -Dsonar.sources=. \
+                        -Dsonar.java.binaries=target/classes
+                    '''
+                }
+            }
+        
   
 
         stage('🔨 Build JAR') {
