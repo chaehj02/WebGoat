@@ -25,26 +25,16 @@ pipeline {
         }
 
 
-        stage('🔍 Semgrep SAST via API') {
+        stage('🔍 Semgrep Cloud SAST') {
         steps {
-            script {
-                def semgrep_response = sh(
-                    script: '''
-                    curl -s -X POST http://43.201.63.122:5000/run-semgrep \
-                    -H "Content-Type: application/json" \
-                    -H "X-API-KEY: mysupersecurekey123" \
-                    -d '{
-                        "repo_url": "https://github.com/Watermelonlatte/WebGoat.git",
-                        "branch": "develop"
-                    }'
-                    ''',
-                    returnStdout: true
-                ).trim()
-
-                echo "📄 Semgrep API 응답 결과:\n${semgrep_response}"
+            withCredentials([string(credentialsId: 'semgrep-token', variable: 'SEMGREP_APP_TOKEN')]) {
+                sh '''
+                semgrep ci --upload --json
+                '''
             }
         }
-    }
+        }   
+
 
 
 
