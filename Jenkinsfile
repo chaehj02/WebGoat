@@ -26,20 +26,18 @@ pipeline {
 
 
     stage('🔍 Semgrep SAST') {
-        steps {
-            sshagent(['semgrep-ssh']) {
-                sh '''
-                ssh -o StrictHostKeyChecking=no ec2-user@43.203.173.155 '
-                    export SEMGREP_APP_TOKEN=1fa9a92f765caf0f83167fb58cd9a4c865bd069ee0809260f1b0497d3f0ed73c && 
-                    rm -rf /tmp/webgoat &&
-                    git clone https://github.com/Watermelonlatte/WebGoat.git /tmp/webgoat &&
-                    cd /tmp/webgoat &&
-                    semgrep ci || true 
-                '
-                '''
-            }
-        }
+    steps {
+        sh '''
+        curl -X POST http://43.201.63.122:5000/run-semgrep \
+          -H "Content-Type: application/json" \
+          -H "X-API-KEY: mysupersecurekey123" \
+          -d '{
+            "repo_url": "https://github.com/Watermelonlatte/WebGoat.git",
+            "branch": "develop"
+          }'
+        '''
     }
+}
 
 
         stage('🔨 Build JAR') {
