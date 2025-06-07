@@ -161,4 +161,3 @@ Resources:
             echo "❌ Build or deployment failed. Check logs!"
         }
     }
-}
