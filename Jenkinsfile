@@ -26,7 +26,7 @@ pipeline {
     }
 
 
-        stage('🧪 SonarQube Analysis') {
+    stages('🧪 SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
