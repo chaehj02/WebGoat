@@ -37,7 +37,7 @@ pipeline {
                     '''
                 }
             }
-        
+    }
   
 
         stage('🔨 Build JAR') {
