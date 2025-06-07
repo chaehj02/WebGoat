@@ -23,10 +23,11 @@ pipeline {
                 checkout scm
             }
         }
-    }
 
-
-    stages('🧪 SonarQube Analysis') {
+        // 웹훅 다시 설정
+        // sonarQube 규칙 설정
+        // 인스턴스 바꿔서 시작 경로수정..
+        stage('🧪 SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
@@ -37,8 +38,7 @@ pipeline {
                     '''
                 }
             }
-    }
-  
+        }
 
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
@@ -161,3 +161,4 @@ Resources:
             echo "❌ Build or deployment failed. Check logs!"
         }
     }
+}
