@@ -29,11 +29,11 @@ pipeline {
         steps {
             withCredentials([string(credentialsId: 'semgrep-token', variable: 'SEMGREP_APP_TOKEN')]) {
                 sh '''
-                semgrep ci --upload --json
+                semgrep ci --baseline-ref origin/develop --upload --json
                 '''
             }
         }
-        }   
+    }   
 
 
 
