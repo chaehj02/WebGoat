@@ -23,6 +23,7 @@ pipeline {
                 checkout scm
             }
         }
+    }
 
 
         stage('🧪 SonarQube Analysis') {
