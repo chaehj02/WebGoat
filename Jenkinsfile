@@ -25,18 +25,20 @@ pipeline {
         }
 
 
-        stage('🔍 Semgrep Cloud SAST') {
+        stage('🔍 Semgrep Cloud via API') {
         steps {
-            withCredentials([string(credentialsId: 'semgrep-token', variable: 'SEMGREP_APP_TOKEN')]) {
-                sh '''
-                semgrep ci --baseline-ref origin/develop --upload --json
-                '''
-            }
+            sh '''
+            curl -s -X POST http://43.201.63.122:5000/run-semgrep \
+            -H "Content-Type: application/json" \
+            -H "X-API-KEY: mysupersecurekey123" \
+            -d '{
+                "repo_url": "https://github.com/Watermelonlatte/WebGoat.git",
+                "branch": "develop"
+              }'
+            '''
         }
-    }   
-
-
-
+        }
+  
 
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
