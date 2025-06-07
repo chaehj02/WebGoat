@@ -30,7 +30,7 @@ pipeline {
             script {
                 def semgrep_response = sh(
                     script: '''
-                    curl -s -X POST http://<semgrep-ip>:5000/run-semgrep \
+                    curl -s -X POST http://43.201.63.122:5000/run-semgrep \
                     -H "Content-Type: application/json" \
                     -H "X-API-KEY: mysupersecurekey123" \
                     -d '{
