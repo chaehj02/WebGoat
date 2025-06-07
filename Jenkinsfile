@@ -25,19 +25,27 @@ pipeline {
         }
 
 
-    stage('🔍 Semgrep SAST') {
-    steps {
-        sh '''
-        curl -X POST http://43.201.63.122:5000/run-semgrep \
-          -H "Content-Type: application/json" \
-          -H "X-API-KEY: mysupersecurekey123" \
-          -d '{
-            "repo_url": "https://github.com/Watermelonlatte/WebGoat.git",
-            "branch": "develop"
-          }'
-        '''
+        stage('🔍 Semgrep SAST via API') {
+        steps {
+            script {
+                def semgrep_response = sh(
+                    script: '''
+                    curl -s -X POST http://<semgrep-ip>:5000/run-semgrep \
+                    -H "Content-Type: application/json" \
+                    -H "X-API-KEY: mysupersecurekey123" \
+                    -d '{
+                        "repo_url": "https://github.com/Watermelonlatte/WebGoat.git",
+                        "branch": "develop"
+                    }'
+                    ''',
+                    returnStdout: true
+                ).trim()
+
+                echo "📄 Semgrep API 응답 결과:\n${semgrep_response}"
+            }
+        }
     }
-}
+
 
 
         stage('🔨 Build JAR') {
