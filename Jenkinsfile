@@ -40,7 +40,33 @@ pipeline {
             }
         }
 
-        
+                stage('📤 Fetch SonarQube Report via API') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    script {
+                        def timestamp = sh(script: "date +%F_%H-%M-%S", returnStdout: true).trim()
+                        env.REPORT_FILE = "sonar_issues_${timestamp}.json"
+
+                        sh """
+                        curl -s -H "Authorization: Bearer $SONAR_AUTH_TOKEN" \\
+                          "$SONAR_HOST_URL/api/issues/search?componentKeys=webgoat" \\
+                          -o ${env.REPORT_FILE}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('☁️ Upload Sonar Report to S3') {
+            steps {
+                script {
+                    sh """
+                    aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region $REGION
+                    """
+                }
+            }
+        }
+
 
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
