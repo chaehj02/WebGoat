@@ -2,58 +2,29 @@ pipeline {
     agent any
 
     environment {
-        ECR_REPO        = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
-        IMAGE_TAG       = "latest"
-        JAVA_HOME       = "/opt/jdk-23"
-         PATH            = "/home/ec2-user/.local/bin:/usr/local/bin:${JAVA_HOME}/bin:$PATH"
-
-        // 개선 1: NVD API Key 연동 (Jenkins Credentials에서 등록한 경우)
-        NVD_API_KEY     = credentials('nvd-api-key')
-
-        // 개선 4: 리소스 이름 변수화
-        CONTAINER_NAME  = "webgoat"
-        CONTAINER_PORT  = "8080"
-        TASK_FAMILY     = "webgoat-taskdef"
-        EXEC_ROLE_ARN   = "arn:aws:iam::159773342061:role/ecsTaskExecutionRole"
-
-        S3_BUCKET       = "webgoat-deploy-bucket"
-        DEPLOY_APP      = "webgoat-cd-app"
-        DEPLOY_GROUP    = "webgoat-deployment-group"
-        REGION          = "ap-northeast-2"
-        BUNDLE          = "webgoat-deploy-bundle.zip"
+        ECR_REPO = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
+        IMAGE_TAG = "latest"
+        JAVA_HOME = "/opt/jdk-23"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        S3_BUCKET = "webgoat-deploy-bucket"
+        DEPLOY_APP = "webgoat-cd-app"
+        DEPLOY_GROUP = "webgoat-deployment-group"
+        REGION = "ap-northeast-2"
+        BUNDLE = "webgoat-deploy-bundle.zip"
+        ECR_REPO        // ECR에 푸시할 이미지 경로
+				IMAGE_TAG       // 태그명 (latest)
+				JAVA_HOME       // JDK 경로
+				S3_BUCKET       // CodeDeploy용 번들을 저장할 S3 버킷
+				DEPLOY_APP      // CodeDeploy 애플리케이션 이름
+				DEPLOY_GROUP    // CodeDeploy 배포 그룹 이름
+				REGION          // AWS 리전
+				BUNDLE          // 생성할 배포 번들 zip 파일명
     }
 
     stages {
         stage('📦 Checkout') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('🔍 Static Analysis - Semgrep') {
-            steps {
-                sh '''
-                echo "[+] Running Semgrep..."
-                semgrep --config "p/owasp-top-ten" . || true
-                '''
-            }
-        }
-
-        stage('🧪 Dependency Check') {
-            steps {
-                sh '''
-echo "[+] Running Dependency-Check safely"
-mkdir -p dependency-check-report
-dependency-check.sh \
-  --project "webgoat" \
-  --scan ./src \
-  --format HTML \
-  --out dependency-check-report \
-  --nvdApiKey "$NVD_API_KEY" \
-  --data /tmp/dependency-check-${BUILD_ID} \
-  --disableRetireJS || true
-'''
-
             }
         }
 
@@ -89,18 +60,18 @@ dependency-check.sh \
             steps {
                 script {
                     def taskdef = """{
-  "family": "${TASK_FAMILY}",
+  "family": "webgoat-taskdef",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
-      "name": "${CONTAINER_NAME}",
+      "name": "webgoat",
       "image": "${ECR_REPO}:${IMAGE_TAG}",
       "memory": 512,
       "cpu": 256,
       "essential": true,
       "portMappings": [
         {
-          "containerPort": ${CONTAINER_PORT},
+          "containerPort": 8080,
           "protocol": "tcp"
         }
       ]
@@ -109,7 +80,7 @@ dependency-check.sh \
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "${EXEC_ROLE_ARN}"
+  "executionRoleArn": "arn:aws:iam::159773342061:role/ecsTaskExecutionRole"
 }"""
                     writeFile file: 'taskdef.json', text: taskdef
                 }
@@ -131,8 +102,8 @@ Resources:
       Properties:
         TaskDefinition: "${taskDefArn}"
         LoadBalancerInfo:
-          ContainerName: "${CONTAINER_NAME}"
-          ContainerPort: ${CONTAINER_PORT}
+          ContainerName: "webgoat"
+          ContainerPort: 8080
 """
                     writeFile file: 'appspec.yaml', text: appspec
                 }
@@ -163,8 +134,7 @@ Resources:
 
     post {
         success {
-            archiveArtifacts artifacts: 'dependency-check-report/**', allowEmptyArchive: true
-            echo "✅ Successfully built, analyzed, pushed, and deployed!"
+            echo "✅ Successfully built, pushed, and deployed!"
         }
         failure {
             echo "❌ Build or deployment failed. Check logs!"
