@@ -34,21 +34,22 @@ pipeline {
 
         stage('⚡ EC2 부팅') {
             steps {
-                sh """
-                    aws ec2 start-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}
-                    /var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${TEST_HOST}
-                """
+                sh '''
+aws ec2 start-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}
+/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${TEST_HOST}
+                '''
             }
         }
 
         stage('🐳 Docker Build & Push') {
             steps {
                 sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
-                sh """
-                    aws ecr get-login-password --region ${REGION} \
-                      | docker login --username AWS --password-stdin ${ECR_REPO}
-                    docker push ${ECR_REPO}:${IMAGE_TAG}
-                """
+                sh '''
+aws ecr get-login-password --region ${REGION} \
+  | docker login --username AWS --password-stdin ${ECR_REPO}
+
+docker push ${ECR_REPO}:${IMAGE_TAG}
+                '''
             }
         }
 
@@ -56,30 +57,30 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
                     sh """
-                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
-                        # ECR 로그인
-                        aws ecr get-login-password --region ${REGION} \
-                          | docker login --username AWS --password-stdin ${ECR_REPO}
+ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
+# ECR 로그인
+aws ecr get-login-password --region ${REGION} \
+  | docker login --username AWS --password-stdin ${ECR_REPO}
 
-                        # 컨테이너 재배포
-                        docker rm -f ${CONTAINER_NAME} || true
-                        docker pull ${ECR_REPO}:${IMAGE_TAG}
-                        docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
+# 컨테이너 재배포
+docker rm -f ${CONTAINER_NAME} || true
+docker pull ${ECR_REPO}:${IMAGE_TAG}
+docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
 
-                        # 대기
-                        sleep 10
+# 대기
+sleep 10
 
-                        # ZAP 스캔 (컨테이너 이름 인자로 전달)
-                        chmod +x ~/${ZAP_SCRIPT}
-                        ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
+# ZAP 스캔 (컨테이너 이름 인자로 전달)
+chmod +x ~/${ZAP_SCRIPT}
+~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 
-                        # 리포트 수집
-                        mv ~/${ZAP_SCRIPT/.sh/_report.json} zap_test.json
+# 리포트 수집
+mv ~/\${ZAP_SCRIPT%.sh}_report.json zap_test.json
 
-                        # 정리
-                        docker rm -f ${CONTAINER_NAME}
-                        EOF
-                    """
+# 정리
+docker rm -f ${CONTAINER_NAME}
+EOF
+"""
                 }
             }
             post {
@@ -148,15 +149,15 @@ Resources:
 
         stage('🚀 Deploy via CodeDeploy') {
             steps {
-                sh """
-                    aws s3 cp ${BUNDLE} s3://${S3_BUCKET}/${BUNDLE} --region ${REGION}
-                    aws deploy create-deployment \
-                      --application-name ${DEPLOY_APP} \
-                      --deployment-group-name ${DEPLOY_GROUP} \
-                      --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-                      --s3-location bucket=${S3_BUCKET},bundleType=zip,key=${BUNDLE} \
-                      --region ${REGION}
-                """
+                sh '''
+aws s3 cp ${BUNDLE} s3://\${S3_BUCKET}/${BUNDLE} --region ${REGION}
+aws deploy create-deployment \
+  --application-name ${DEPLOY_APP} \
+  --deployment-group-name ${DEPLOY_GROUP} \
+  --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+  --s3-location bucket=${S3_BUCKET},bundleType=zip,key=${BUNDLE} \
+  --region ${REGION}
+                '''
             }
         }
     }
