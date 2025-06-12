@@ -2,34 +2,28 @@ pipeline {
     agent any
 
     environment {
-        ECR_REPO      = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
-        IMAGE_TAG     = "${env.BUILD_NUMBER}"
-        JAVA_HOME     = "/opt/jdk-23"
-        PATH          = "${env.JAVA_HOME}/bin:${env.PATH}"
-        REGION        = "ap-northeast-2"
-        // 테스트용 EC2
-        TEST_HOST     = "172.31.8.198"
-        SSH_CRED_ID   = "jenkin_sv"
-        ZAP_SCRIPT    = "zap_webgoat.sh"
+        ECR_REPO       = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
+        IMAGE_TAG      = "${env.BUILD_NUMBER}"
+        JAVA_HOME      = "/opt/jdk-23"
+        PATH           = "${env.JAVA_HOME}/bin:${env.PATH}"
+        REGION         = "ap-northeast-2"
+        TEST_HOST      = "172.31.8.198"
+        SSH_CRED_ID    = "jenkin_sv"
+        ZAP_SCRIPT     = "zap_webgoat.sh"
         CONTAINER_NAME = "webgoat-test"
-        // 이하 CD용 변수 (기존과 동일)
-        S3_BUCKET     = "webgoat-deploy-bucket"
-        DEPLOY_APP    = "webgoat-cd-app"
-        DEPLOY_GROUP  = "webgoat-deployment-group"
-        BUNDLE        = "webgoat-deploy-bundle.zip"
+        S3_BUCKET      = "webgoat-deploy-bucket"
+        DEPLOY_APP     = "webgoat-cd-app"
+        DEPLOY_GROUP   = "webgoat-deployment-group"
+        BUNDLE         = "webgoat-deploy-bundle.zip"
     }
 
     stages {
         stage('📦 Checkout') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
         stage('🔨 Build JAR') {
-            steps {
-                sh 'mvn clean package -DskipTests'
-            }
+            steps { sh 'mvn clean package -DskipTests' }
         }
 
         stage('⚡ EC2 부팅') {
@@ -56,30 +50,22 @@ docker push ${ECR_REPO}:${IMAGE_TAG}
         stage('🔍 Security Test on EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
+                    // 원격 EC2에서 ZAP 스캔 실행
                     sh """
 ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
-# ECR 로그인
-aws ecr get-login-password --region ${REGION} \
-  | docker login --username AWS --password-stdin ${ECR_REPO}
-
-# 컨테이너 재배포
-docker rm -f ${CONTAINER_NAME} || true
-docker pull ${ECR_REPO}:${IMAGE_TAG}
-docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
-
-# 대기
-sleep 10
-
-# ZAP 스캔 (컨테이너 이름 인자로 전달)
-chmod +x ~/${ZAP_SCRIPT}
-~/${ZAP_SCRIPT} ${CONTAINER_NAME}
-
-# 리포트 수집
-mv ~/\${ZAP_SCRIPT%.sh}_report.json zap_test.json
-
-# 정리
-docker rm -f ${CONTAINER_NAME}
+  aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
+  docker rm -f ${CONTAINER_NAME} || true
+  docker pull ${ECR_REPO}:${IMAGE_TAG}
+  docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
+  sleep 10
+  chmod +x ~/${ZAP_SCRIPT}
+  ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 EOF
+"""
+                    // 생성된 리포트 파일을 로컬로 복사
+                    sh """
+scp -i $SSH_KEY -o StrictHostKeyChecking=no \
+  ec2-user@${TEST_HOST}:~/zap_scan_*_report.json ./zap_test.json || true
 """
                 }
             }
@@ -90,7 +76,6 @@ EOF
             }
         }
 
-        // --- 기존 CD 과정 그대로 ---
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
@@ -113,7 +98,7 @@ EOF
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::159773342061:role/ecsTaskExecutionRole"
-}'''  
+}'''
                     writeFile file: 'taskdef.json', text: taskdef
                 }
             }
@@ -142,15 +127,13 @@ Resources:
         }
 
         stage('📦 Bundle for CodeDeploy') {
-            steps {
-                sh 'zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json'
-            }
+            steps { sh 'zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json' }
         }
 
         stage('🚀 Deploy via CodeDeploy') {
             steps {
                 sh '''
-aws s3 cp ${BUNDLE} s3://\${S3_BUCKET}/${BUNDLE} --region ${REGION}
+aws s3 cp ${BUNDLE} s3://${S3_BUCKET}/${BUNDLE} --region ${REGION}
 aws deploy create-deployment \
   --application-name ${DEPLOY_APP} \
   --deployment-group-name ${DEPLOY_GROUP} \
@@ -163,12 +146,8 @@ aws deploy create-deployment \
     }
 
     post {
-        success {
-            echo "✅ CD & Security Test 모두 완료!"
-        }
-        failure {
-            echo "❌ 파이프라인 실패, 로그 확인 요망."
-        }
+        success { echo "✅ CD & Security Test 모두 완료!" }
+        failure { echo "❌ 파이프라인 실패, 로그 확인 요망." }
         always {
             echo "🛑 EC2 인스턴스 중지 시도 중..."
             sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
