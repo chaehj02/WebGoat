@@ -4,6 +4,8 @@ pipeline {
     environment {
         ECR_REPO    = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
         IMAGE_TAG   = "${env.BUILD_NUMBER}"
+        JAVA_HOME = "/opt/jdk-23"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         REGION      = "ap-northeast-2"
         // 테스트용 EC2
         TEST_HOST   = "172.31.8.198"
