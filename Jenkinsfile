@@ -65,7 +65,8 @@ EOF
                     // 생성된 리포트 파일을 로컬로 복사
                     sh """
 scp -i $SSH_KEY -o StrictHostKeyChecking=no \
-  ec2-user@${TEST_HOST}:~/zap_scan_*_report.json ./zap_test.json || true
+  ec2-user@${TEST_HOST}:"~/zap_scan_*_report.json" \
+  ./zap_test.json || true
 """
                 }
             }
@@ -79,7 +80,8 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
-                    def taskdef = '''{
+                    // 트리플 더블쿼트로 변경: 변수 치환이 활성화됩니다
+                    def taskdef = """{
   "family": "webgoat-taskdef",
   "networkMode": "awsvpc",
   "containerDefinitions": [
@@ -90,7 +92,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
       "cpu": 256,
       "essential": true,
       "portMappings": [
-        {"containerPort": 8080,"protocol": "tcp"}
+        {"containerPort": 8080, "protocol": "tcp"}
       ]
     }
   ],
@@ -98,7 +100,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::159773342061:role/ecsTaskExecutionRole"
-}'''
+}"""
                     writeFile file: 'taskdef.json', text: taskdef
                 }
             }
