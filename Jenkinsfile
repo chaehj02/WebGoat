@@ -24,7 +24,7 @@ pipeline {
 
         stage('🔨 Build JAR') {
             steps {
-                sh 'components/scripts/Bulid_JAR.sh'
+                sh 'components/scripts/Build_JAR.sh'
             }
         }
 
