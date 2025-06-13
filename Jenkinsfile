@@ -77,12 +77,10 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
 
         stage('🔁 Convert ZAP JSON → SecurityHub Format') {
     steps {
-        sh '''
-        cp /var/lib/jenkins/workspace/convert_zap.py .
-        python3 convert_zap.py zap_test.json converted_findings.json
-        '''
+        sh 'python3 ~/convert_zap.py'
     }
 }
+
 
 
         stage('☁ Upload JSON to S3') {
