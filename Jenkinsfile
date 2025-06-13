@@ -187,4 +187,4 @@ aws deploy create-deployment \
             sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
         }
     }
-}
+
