@@ -1,4 +1,4 @@
-// 📦 SonarQube 분석 시작
+// SonarQube 분석 시작
 withSonarQubeEnv(env.SONARQUBE_ENV) {
     sh '''
     /opt/sonar-scanner/bin/sonar-scanner \
@@ -8,7 +8,7 @@ withSonarQubeEnv(env.SONARQUBE_ENV) {
     '''
 }
 
-// 📤 SonarQube API 결과 수집 및 파일 저장
+// SonarQube API 결과 수집 및 파일 저장
 withSonarQubeEnv(env.SONARQUBE_ENV) {
     script {
         def timestamp = sh(script: "date +%F_%H-%M-%S", returnStdout: true).trim()
@@ -22,7 +22,7 @@ withSonarQubeEnv(env.SONARQUBE_ENV) {
     }
 }
 
-// ☁️ S3로 업로드
+// S3로 업로드
 sh """
 aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region $REGION
 """
