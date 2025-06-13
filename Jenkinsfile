@@ -62,6 +62,7 @@ EOF
 """
                     // 리포트 복사
                     sh """
+rm -rf zap_test.json
 scp -i $SSH_KEY -o StrictHostKeyChecking=no \
   ec2-user@${TEST_HOST}:~/zap_test.json .
 """
