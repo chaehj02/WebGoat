@@ -30,19 +30,19 @@ pipeline {
 
         stage('🐳 Docker Build') {
             steps {
-                sh 'components/scrips/Docker_Build.sh'
+                sh 'components/scripts/Docker_Build.sh'
             }
         }
 
         stage('🔐 ECR Login') {
             steps {
-                sh 'components/scrips/ECR_Login.sh'
+                sh 'components/scripts/ECR_Login.sh'
             }
         }
 
         stage('🚀 Push to ECR') {
             steps {
-                sh 'components/scrips/Push_to_ECR.sh'
+                sh 'components/scripts/Push_to_ECR.sh'
             }
         }
 
@@ -73,13 +73,13 @@ pipeline {
 
         stage('📦 Bundle for CodeDeploy') {
             steps {
-                sh 'components/scrips/Bundle_for_CodeDeploy'
+                sh 'components/scripts/Bundle_for_CodeDeploy'
             }
         }
 
         stage('🚀 Deploy via CodeDeploy') {
             steps {
-                sh 'components/scrips/Deploy_via_CodeDeploy'
+                sh 'components/scripts/Deploy_via_CodeDeploy'
             }
         }
     }
