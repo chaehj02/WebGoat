@@ -76,6 +76,37 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
                 }
             }
         }
+        stage('🔁 Convert ZAP JSON → SecurityHub Format') {
+    steps {
+        // 변환 스크립트 실행
+        sh 'python3 convert_zap.py'
+    }
+}
+
+stage('☁ Upload JSON to S3') {
+    steps {
+        script {
+            def timestamp = new Date().format("yyyyMMdd_HHmmss")
+            def s3_key = "findings/converted_findings_${timestamp}.json"
+            sh """
+                aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
+            """
+            // 환경변수에 저장 (다음 스테이지에서 사용 가능)
+            env.S3_JSON_KEY = s3_key
+        }
+    }
+}
+
+stage('🔐 Register to SecurityHub') {
+    steps {
+        sh """
+        aws securityhub batch-import-findings \
+          --region ${REGION} \
+          --findings file://converted_findings.json
+        """
+    }
+}
+
 
         stage('🧩 Generate taskdef.json') {
             steps {
