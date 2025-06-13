@@ -49,7 +49,7 @@ pipeline {
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
-                    def runTaskDefGen = load 'components/functions/generateTaskdefAndWrite.groovy'
+                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
                     runTaskDefGen(env)
                 }
             }
