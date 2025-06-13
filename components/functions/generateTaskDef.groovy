@@ -23,3 +23,5 @@ def call(env) {
   "executionRoleArn": "arn:aws:iam::535052053335:role/ecsTaskExecutionRole"
 }"""
 }
+
+return this
