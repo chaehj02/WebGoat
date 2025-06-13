@@ -11,6 +11,7 @@ pipeline {
         DEPLOY_GROUP = "webgoat-deploy-group"
         REGION = "ap-northeast-2"
         BUNDLE = "deploy2.zip"
+        SONARQUBE_ENV = "WH_sonarqube"
     }
 
     stages {
@@ -22,14 +23,50 @@ pipeline {
                 checkout scm
             }
         }
-        
+
+        // 웹훅 다시 설정
+        // sonarQube 규칙 설정
+        // 인스턴스 바꿔서 시작 경로수정..
         stage('🧪 SonarQube Analysis') {
             steps {
-                script{
-                    load 'components/sonarqube_analysis.groovy'
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh '''
+                    /opt/sonar-scanner/bin/sonar-scanner \
+                        -Dsonar.projectKey=webgoat \
+                        -Dsonar.sources=. \
+                        -Dsonar.java.binaries=target/classes
+                    '''
                 }
             }
         }
+
+                stage('📤 Fetch SonarQube Report via API') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    script {
+                        def timestamp = sh(script: "date +%F_%H-%M-%S", returnStdout: true).trim()
+                        env.REPORT_FILE = "sonar_issues_${timestamp}.json"
+
+                        sh """
+                        curl -s -H "Authorization: Bearer $SONAR_AUTH_TOKEN" \\
+                          "$SONAR_HOST_URL/api/issues/search?componentKeys=webgoat" \\
+                          -o ${env.REPORT_FILE}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('☁️ Upload Sonar Report to S3') {
+            steps {
+                script {
+                    sh """
+                    aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region $REGION
+                    """
+                }
+            }
+        }
+
 
         stage('🔨 Build JAR') {
             // Maven으로 WebGoat 애플리케이션을 빌드해서 .jar 파일을 만듦
@@ -71,29 +108,8 @@ pipeline {
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
-                    def taskdef = """{
-  "family": "webgoat-task-def",
-  "networkMode": "awsvpc",
-  "containerDefinitions": [
-    {
-      "name": "webgoat",
-      "image": "${ECR_REPO}:${IMAGE_TAG}",
-      "memory": 512,
-      "cpu": 256,
-      "essential": true,
-      "portMappings": [
-        {
-          "containerPort": 8080,
-          "protocol": "tcp"
-        }
-      ]
-    }
-  ],
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::535052053335:role/ecsTaskExecutionRole"
-}"""
+                    def generateTaskDef=load 'components/functions/generateTaskDef.groovy'
+                    def taskdef = generateTaskDef(env)
                     writeFile file: 'taskdef.json', text: taskdef
                 }
             }
@@ -107,16 +123,8 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    def appspec = """version: 1
-Resources:
-  - TargetService:
-      Type: AWS::ECS::Service
-      Properties:
-        TaskDefinition: "${taskDefArn}"
-        LoadBalancerInfo:
-          ContainerName: "webgoat"
-          ContainerPort: 8080
-"""
+                    def appspec = load 'components/functions/generateAppSpec.groovy'
+                    def appspec = generateAppSpec(taskDefArn)
                     writeFile file: 'appspec.yaml', text: appspec
                 }
             }
