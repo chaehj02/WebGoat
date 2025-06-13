@@ -123,7 +123,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    def appspec = load 'components/functions/generateAppSpec.groovy'
+                    def generateAppSpec = load 'components/functions/generateAppSpec.groovy'
                     def appspec = generateAppSpec(taskDefArn)
                     writeFile file: 'appspec.yaml', text: appspec
                 }
