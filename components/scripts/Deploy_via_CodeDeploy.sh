@@ -1,5 +1,6 @@
 #!/bin/bash
 source components/dot.env
+
 sh '''
 aws s3 cp $BUNDLE s3://$S3_BUCKET/$BUNDLE --region $REGION
 
