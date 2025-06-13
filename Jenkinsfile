@@ -41,7 +41,6 @@ aws ec2 start-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}
                 sh '''
 aws ecr get-login-password --region ${REGION} \
   | docker login --username AWS --password-stdin ${ECR_REPO}
-
 docker push ${ECR_REPO}:${IMAGE_TAG}
                 '''
             }
@@ -50,7 +49,6 @@ docker push ${ECR_REPO}:${IMAGE_TAG}
         stage('🔍 Security Test on EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
-                    // 원격 EC2에서 ZAP 스캔 실행
                     sh """
 ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
   aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
@@ -62,11 +60,11 @@ ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
   ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 EOF
 """
-                    // 생성된 리포트 파일을 로컬로 복사
+                    // 리포트 복사
                     sh """
 scp -i $SSH_KEY -o StrictHostKeyChecking=no \
   ec2-user@${TEST_HOST}:"~/zap_scan_*_report.json" \
-  ./zap_test.json || true
+  zap_test.json || true
 """
                 }
             }
@@ -76,43 +74,39 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
                 }
             }
         }
+
         stage('🔁 Convert ZAP JSON → SecurityHub Format') {
-    steps {
-        sh 'python3 ~/convert_zap.py zap_test.json converted_findings.json'
-    }
-}
-
-}
-
-stage('☁ Upload JSON to S3') {
-    steps {
-        script {
-            def timestamp = new Date().format("yyyyMMdd_HHmmss")
-            def s3_key = "findings/converted_findings_${timestamp}.json"
-            sh """
-                aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
-            """
-            // 환경변수에 저장 (다음 스테이지에서 사용 가능)
-            env.S3_JSON_KEY = s3_key
+            steps {
+                sh 'python3 ~/convert_zap.py zap_test.json converted_findings.json'
+            }
         }
-    }
-}
 
-stage('🔐 Register to SecurityHub') {
-    steps {
-        sh """
-        aws securityhub batch-import-findings \
-          --region ${REGION} \
-          --findings file://converted_findings.json
-        """
-    }
-}
+        stage('☁ Upload JSON to S3') {
+            steps {
+                script {
+                    def timestamp = new Date().format("yyyyMMdd_HHmmss")
+                    def s3_key = "findings/converted_findings_${timestamp}.json"
+                    sh """
+                        aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
+                    """
+                    env.S3_JSON_KEY = s3_key
+                }
+            }
+        }
 
+        stage('🔐 Register to SecurityHub') {
+            steps {
+                sh """
+                aws securityhub batch-import-findings \
+                  --region ${REGION} \
+                  --findings file://converted_findings.json
+                """
+            }
+        }
 
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
-                    // 트리플 더블쿼트로 변경: 변수 치환이 활성화됩니다
                     def taskdef = """{
   "family": "webgoat-taskdef",
   "networkMode": "awsvpc",
@@ -161,7 +155,9 @@ Resources:
         }
 
         stage('📦 Bundle for CodeDeploy') {
-            steps { sh 'zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json' }
+            steps {
+                sh 'zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json'
+            }
         }
 
         stage('🚀 Deploy via CodeDeploy') {
@@ -187,4 +183,4 @@ aws deploy create-deployment \
             sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
         }
     }
-
+}
