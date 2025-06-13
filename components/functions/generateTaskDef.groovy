@@ -24,3 +24,5 @@ def call(env) {
 }"""
     writeFile file: 'taskdef.json', text: json
 }
+
+return this

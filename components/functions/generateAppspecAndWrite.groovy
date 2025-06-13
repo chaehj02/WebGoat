@@ -17,3 +17,5 @@ Resources:
 
     writeFile file: 'appspec.yaml', text: appspec
 }
+
+return this
