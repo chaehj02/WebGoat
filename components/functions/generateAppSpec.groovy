@@ -10,3 +10,5 @@ Resources:
           ContainerPort: 8080
 """
 }
+
+return this
