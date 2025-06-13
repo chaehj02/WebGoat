@@ -73,13 +73,13 @@ pipeline {
 
         stage('📦 Bundle for CodeDeploy') {
             steps {
-                sh 'components/scripts/Bundle_for_CodeDeploy'
+                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
             }
         }
 
         stage('🚀 Deploy via CodeDeploy') {
             steps {
-                sh 'components/scripts/Deploy_via_CodeDeploy'
+                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
             }
         }
     }
