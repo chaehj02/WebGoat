@@ -96,15 +96,6 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
             }
         }
 
-        stage('🔐 Register to SecurityHub') {
-            steps {
-                sh """
-                aws securityhub batch-import-findings \
-                  --region ${REGION} \
-                  --findings file://converted_findings.json
-                """
-            }
-        }
 
         stage('🧩 Generate taskdef.json') {
             steps {
