@@ -78,9 +78,10 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
         }
         stage('🔁 Convert ZAP JSON → SecurityHub Format') {
     steps {
-        // 변환 스크립트 실행
-        sh 'python3 convert_zap.py'
+        sh 'python3 ~/convert_zap.py zap_test.json converted_findings.json'
     }
+}
+
 }
 
 stage('☁ Upload JSON to S3') {
