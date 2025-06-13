@@ -63,8 +63,7 @@ EOF
                     // 리포트 복사
                     sh """
 scp -i $SSH_KEY -o StrictHostKeyChecking=no \
-  ec2-user@${TEST_HOST}:"~/zap_scan_*_report.json" \
-  zap_test.json || true
+  ec2-user@${TEST_HOST}:~/zap_test.json .
 """
                 }
             }
@@ -76,10 +75,14 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
         }
 
         stage('🔁 Convert ZAP JSON → SecurityHub Format') {
-            steps {
-                sh 'python3 ~/convert_zap.py zap_test.json converted_findings.json'
-            }
-        }
+    steps {
+        sh '''
+        cp /var/lib/jenkins/workspace/convert_zap.py .
+        python3 convert_zap.py zap_test.json converted_findings.json
+        '''
+    }
+}
+
 
         stage('☁ Upload JSON to S3') {
             steps {
