@@ -1,5 +1,5 @@
 def call(env) {
-    return """{
+    def json = """{
   "family": "webgoat-task-def",
   "networkMode": "awsvpc",
   "containerDefinitions": [
@@ -22,6 +22,5 @@ def call(env) {
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::535052053335:role/ecsTaskExecutionRole"
 }"""
+    writeFile file: 'taskdef.json', text: json
 }
-
-return this

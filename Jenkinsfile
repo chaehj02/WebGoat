@@ -49,9 +49,8 @@ pipeline {
         stage('🧩 Generate taskdef.json') {
             steps {
                 script {
-                    def generateTaskDef=load 'components/functions/generateTaskDef.groovy'
-                    def taskdef = generateTaskDef(env)
-                    writeFile file: 'taskdef.json', text: taskdef
+                    def runTaskDefGen = load 'components/functions/generateTaskdefAndWrite.groovy'
+                    runTaskDefGen(env)
                 }
             }
         }
@@ -59,14 +58,8 @@ pipeline {
         stage('📄 Generate appspec.yaml') {
             steps {
                 script {
-                    def taskDefArn = sh(
-                        script: "aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --region $REGION --output text",
-                        returnStdout: true
-                    ).trim()
-
-                    def generateAppSpec = load 'components/functions/generateAppSpec.groovy'
-                    def appspec = generateAppSpec(taskDefArn)
-                    writeFile file: 'appspec.yaml', text: appspec
+                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
+                    runAppSpecGen(env.REGION)
                 }
             }
         }
