@@ -75,29 +75,18 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
             }
         }
 
-        stage('🔁 Convert ZAP JSON → SecurityHub Format') {
-    steps {
-        sh 'python3 /var/lib/jenkins/scripts/convert_zap.py'
-    }
-}
-
-
-
-      stage('☁ Upload JSON to S3') {
-    steps {
-        script {
-            def timestamp = new Date().format("yyyyMMdd_HHmmss")
-            def s3_key = "default/converted_findings_${timestamp}.json"  // ⬅ 변경된 부분
-            sh """
-                aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
-            """
-            env.S3_JSON_KEY = s3_key
+        stage('☁ Upload ZAP JSON to S3') {
+            steps {
+                script {
+                    def timestamp = new Date().format("yyyyMMdd_HHmmss")
+                    def s3_key = "zap_raw/zap_test_${timestamp}.json"
+                    sh """
+                        aws s3 cp zap_test.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
+                    """
+                    env.S3_JSON_KEY = s3_key
+                }
+            }
         }
-    }
-}
-
-
-
 
         stage('🧩 Generate taskdef.json') {
             steps {
