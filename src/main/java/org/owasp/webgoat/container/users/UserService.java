@@ -6,6 +6,8 @@ package org.owasp.webgoat.container.users;
 
 import java.util.List;
 import java.util.function.Function;
+
+import jakarta.annotation.PostConstruct; // <- 반드시 import 필요
 import lombok.AllArgsConstructor;
 import org.flywaydb.core.Flyway;
 import org.owasp.webgoat.container.lessons.Initializable;
@@ -38,9 +40,8 @@ public class UserService implements UserDetailsService {
   }
 
   public void addUser(String username, String password) {
-    // get user if there exists one by the name
-    var userAlreadyExists = userRepository.existsByUsername(username);
-    var webGoatUser = userRepository.save(new WebGoatUser(username, password));
+    boolean userAlreadyExists = userRepository.existsByUsername(username);
+    WebGoatUser webGoatUser = userRepository.save(new WebGoatUser(username, password));
 
     if (!userAlreadyExists) {
       userTrackerRepository.save(
@@ -57,12 +58,13 @@ public class UserService implements UserDetailsService {
   public List<WebGoatUser> getAllUsers() {
     return userRepository.findAll();
   }
-}
-@PostConstruct
-public void logAllUsers() {
+
+  // ✅ 클래스 내부에 위치해야 함
+  @PostConstruct
+  public void logAllUsers() {
     System.out.println("==== WebGoat Users ====");
     userRepository.findAll().forEach(u -> {
-        System.out.printf("User: %s, Role: %s%n", u.getUsername(), u.getRole());
+      System.out.printf("User: %s, Role: %s%n", u.getUsername(), u.getRole());
     });
+  }
 }
-
