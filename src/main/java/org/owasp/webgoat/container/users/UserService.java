@@ -58,3 +58,11 @@ public class UserService implements UserDetailsService {
     return userRepository.findAll();
   }
 }
+@PostConstruct
+public void logAllUsers() {
+    System.out.println("==== WebGoat Users ====");
+    userRepository.findAll().forEach(u -> {
+        System.out.printf("User: %s, Role: %s%n", u.getUsername(), u.getRole());
+    });
+}
+
