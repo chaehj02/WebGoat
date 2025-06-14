@@ -83,11 +83,11 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
 
 
 
-       stage('☁ Upload JSON to S3') {
+      stage('☁ Upload JSON to S3') {
     steps {
         script {
             def timestamp = new Date().format("yyyyMMdd_HHmmss")
-            def s3_key = "default/converted_findings_${timestamp}.json"
+            def s3_key = "default/converted_findings_${timestamp}.json"  // ⬅ 변경된 부분
             sh """
                 aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
             """
@@ -95,6 +95,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
         }
     }
 }
+
 
 
 
