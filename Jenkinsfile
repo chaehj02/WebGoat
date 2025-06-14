@@ -83,18 +83,19 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no \
 
 
 
-        stage('☁ Upload JSON to S3') {
-            steps {
-                script {
-                    def timestamp = new Date().format("yyyyMMdd_HHmmss")
-                    def s3_key = "findings/converted_findings_${timestamp}.json"
-                    sh """
-                        aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
-                    """
-                    env.S3_JSON_KEY = s3_key
-                }
-            }
+       stage('☁ Upload JSON to S3') {
+    steps {
+        script {
+            def timestamp = new Date().format("yyyyMMdd_HHmmss")
+            def s3_key = "default/converted_findings_${timestamp}.json"
+            sh """
+                aws s3 cp converted_findings.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
+            """
+            env.S3_JSON_KEY = s3_key
         }
+    }
+}
+
 
 
         stage('🧩 Generate taskdef.json') {
