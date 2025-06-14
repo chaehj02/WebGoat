@@ -60,12 +60,6 @@ create table CONTAINER.email
     title     VARCHAR(255)
 );
 
-INSERT INTO CONTAINER.web_goat_user (username, password, role)
-VALUES (
-    'testuser',
-    '$2a$10$VqVTxmwwsQHhr5ML8.MKw.Wk6mKvUMqlErECy7ex.W30yK.HaCUPW',  -- testuser
-    'WEBGOAT_USER'
-);
 
 alter table CONTAINER.assignment_progress
     add constraint FK7o6abukma83ku3xrge9sy0qnr foreign key (assignment_id) references CONTAINER.assignment;
@@ -77,3 +71,10 @@ alter table CONTAINER.user_progress_lesson_progress
     add constraint FKkk5vk79v4q48xb5apeq0g5t2q foreign key (lesson_progress_id) references CONTAINER.lesson_progress;
 alter table CONTAINER.user_progress_lesson_progress
     add constraint FKkw1rtg14shtginbfflbglbf4m foreign key (user_progress_id) references CONTAINER.user_progress;
+
+INSERT INTO CONTAINER.web_goat_user (username, password, role)
+VALUES (
+    'testuser',
+    '$2a$10$VqVTxmwwsQHhr5ML8.MKw.Wk6mKvUMqlErECy7ex.W30yK.HaCUPW',  -- 'testuser'
+    'WEBGOAT_USER'
+);
