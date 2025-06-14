@@ -60,6 +60,13 @@ create table CONTAINER.email
     title     VARCHAR(255)
 );
 
+INSERT INTO CONTAINER.web_goat_user (username, password, role)
+VALUES (
+    'testuser',
+    '$2a$10$VqVTxmwwsQHhr5ML8.MKw.Wk6mKvUMqlErECy7ex.W30yK.HaCUPW',  -- testuser
+    'WEBGOAT_USER'
+);
+
 alter table CONTAINER.assignment_progress
     add constraint FK7o6abukma83ku3xrge9sy0qnr foreign key (assignment_id) references CONTAINER.assignment;
 alter table CONTAINER.lesson_progress_assignments
