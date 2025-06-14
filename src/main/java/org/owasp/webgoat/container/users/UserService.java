@@ -4,7 +4,6 @@
  */
 package org.owasp.webgoat.container.users;
 
-import jakarta.annotation.PostConstruct; 
 import java.util.List;
 import java.util.function.Function;
 import lombok.AllArgsConstructor;
@@ -24,20 +23,7 @@ public class UserService implements UserDetailsService {
   private final JdbcTemplate jdbcTemplate;
   private final Function<String, Flyway> flywayLessons;
   private final List<Initializable> lessonInitializables;
-    
-     @PostConstruct
-    public void initDefaultUser() {
-        String username = "user123";
-        String password = "user123";
 
-        if (!userRepository.existsByUsername(username)) {
-            WebGoatUser user = new WebGoatUser(username, password);
-            userRepository.save(user);
-            System.out.println("✅ 기본 사용자 user123 생성됨");
-        }
-    }
-
-    
   @Override
   public WebGoatUser loadUserByUsername(String username) throws UsernameNotFoundException {
     WebGoatUser webGoatUser = userRepository.findByUsername(username);
