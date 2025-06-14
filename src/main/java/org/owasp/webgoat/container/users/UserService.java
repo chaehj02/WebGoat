@@ -1,5 +1,18 @@
-import jakarta.annotation.PostConstruct;
-// ...
+/*
+ * SPDX-FileCopyrightText: Copyright © 2017 WebGoat authors
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+package org.owasp.webgoat.container.users;
+
+import java.util.List;
+import java.util.function.Function;
+import lombok.AllArgsConstructor;
+import org.flywaydb.core.Flyway;
+import org.owasp.webgoat.container.lessons.Initializable;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
@@ -11,17 +24,6 @@ public class UserService implements UserDetailsService {
   private final Function<String, Flyway> flywayLessons;
   private final List<Initializable> lessonInitializables;
 
-  @PostConstruct
-  public void initDefaultUser() {
-      String username = "user123";
-      String password = "user123";
-
-      if (!userRepository.existsByUsername(username)) {
-          addUser(username, password);
-          System.out.println("✅ 기본 사용자 'user123' 생성 완료");
-      }
-  }
-
   @Override
   public WebGoatUser loadUserByUsername(String username) throws UsernameNotFoundException {
     WebGoatUser webGoatUser = userRepository.findByUsername(username);
@@ -29,17 +31,20 @@ public class UserService implements UserDetailsService {
       throw new UsernameNotFoundException("User not found");
     } else {
       webGoatUser.createUser();
+      // TODO maybe better to use an event to initialize lessons to keep dependencies low
       lessonInitializables.forEach(l -> l.initialize(webGoatUser));
     }
     return webGoatUser;
   }
 
   public void addUser(String username, String password) {
+    // get user if there exists one by the name
     var userAlreadyExists = userRepository.existsByUsername(username);
     var webGoatUser = userRepository.save(new WebGoatUser(username, password));
 
     if (!userAlreadyExists) {
-      userTrackerRepository.save(new UserProgress(username));
+      userTrackerRepository.save(
+          new UserProgress(username)); // if user previously existed it will not get another tracker
       createLessonsForUser(webGoatUser);
     }
   }
