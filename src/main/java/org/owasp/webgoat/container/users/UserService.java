@@ -4,6 +4,7 @@
  */
 package org.owasp.webgoat.container.users;
 
+import jakarta.annotation.PostConstruct; 
 import java.util.List;
 import java.util.function.Function;
 import lombok.AllArgsConstructor;
