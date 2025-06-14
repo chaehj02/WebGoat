@@ -46,7 +46,10 @@ docker push ${ECR_REPO}:${IMAGE_TAG}
             }
         }
 
-        stage('🔍 Security Test on EC2') {
+        stage('🔍 병렬 ZAP 스캔') {
+    parallel {
+        stage('WebGoat ZAP') {
+            agent { label 'zap' }
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
                     sh """
@@ -60,30 +63,28 @@ ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
   ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 EOF
 """
-                    // 리포트 복사
                     sh """
 rm -rf zap_test.json
 scp -i $SSH_KEY -o StrictHostKeyChecking=no \
   ec2-user@${TEST_HOST}:~/zap_test.json .
 """
                 }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'zap_test.json', allowEmptyArchive: true, fingerprint: true
+
+                // Upload to S3
+                script {
+                    def timestamp = new Date().format("yyyyMMdd_HHmmss")
+                    def s3_key = "default/zap_test_${timestamp}.json"
+                    sh "aws s3 cp zap_test.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}"
+                    env.S3_JSON_KEY = s3_key
                 }
             }
         }
+    }
 
-        stage('☁ Upload JSON to S3') {
-    steps {
-        script {
-            def timestamp = new Date().format("yyyyMMdd_HHmmss")
-            def s3_key = "default/zap_test_${timestamp}.json"
-            sh """
-                aws s3 cp zap_test.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}
-            """
-            env.S3_JSON_KEY = s3_key
+    post {
+        always {
+            echo "🛑 모든 병렬 스캔 작업 완료 → EC2 인스턴스 중지 시도"
+            sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
         }
     }
 }
