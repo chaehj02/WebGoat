@@ -7,7 +7,7 @@ pipeline {
         JAVA_HOME      = "/opt/jdk-23"
         PATH           = "${env.JAVA_HOME}/bin:${env.PATH}"
         REGION         = "ap-northeast-2"
-        TEST_HOST      = "172.31.8.198"
+        DAST_HOST      = "172.31.8.198"
         SSH_CRED_ID    = "jenkin_sv"
         ZAP_SCRIPT     = "zap_webgoat.sh"
         CONTAINER_NAME = "webgoat-test"
@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh '''
 aws ec2 start-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}
-/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${TEST_HOST}
+/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}
                 '''
             }
         }
@@ -49,13 +49,13 @@ docker push ${ECR_REPO}:${IMAGE_TAG}
         stage('🧪 병렬 스캔 및 배포') {
             parallel {
                 stage('🔍 ZAP & SecurityHub') {
-                    agent { label 'zap' }
+                    agent { label 'DAST' }
                     stages {
                         stage('ZAP 스캔') {
                             steps {
                                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
                                     sh '''
-ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
+ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
   aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
   docker rm -f ${CONTAINER_NAME} || true
   docker pull ${ECR_REPO}:${IMAGE_TAG}
@@ -64,7 +64,7 @@ ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST} <<EOF
   chmod +x ~/${ZAP_SCRIPT}
   ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 EOF
-scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${TEST_HOST}:~/zap_test.json .
+scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
                                     '''
                                 }
                             }
