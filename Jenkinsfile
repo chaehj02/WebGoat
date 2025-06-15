@@ -1,17 +1,17 @@
 pipeline {
-    agent any
+    agent { label 'Built-In Node' }
 
     environment {
-        ECR_REPO = "535052053335.dkr.ecr.ap-northeast-2.amazonaws.com/wh_1/devpos"
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
-        JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-        REGION = "ap-northeast-2"
-        DAST_HOST = "172.31.8.217"
-        ZAP_SCRIPT = "zap_webgoat.sh"
+        ECR_REPO       = "535052053335.dkr.ecr.ap-northeast-2.amazonaws.com/wh_1/devpos"
+        IMAGE_TAG      = "${env.BUILD_NUMBER}"
+        JAVA_HOME      = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
+        PATH           = "${env.JAVA_HOME}/bin:${env.PATH}"
+        REGION         = "ap-northeast-2"
+        DAST_HOST      = "172.31.8.217"
+        ZAP_SCRIPT     = "zap_webgoat.sh"
         CONTAINER_NAME = "webgoat-test"
-        SSH_CRED_ID = "WH1_key"
-        S3_BUCKET = "testdast" // S3_BUCKET 환경변수 누락 수정
+        SSH_CRED_ID    = "WH1_key"
+        S3_BUCKET      = "testdast"
     }
 
     stages {
@@ -21,7 +21,7 @@ pipeline {
             }
         }
 
-        stage('⚡ EC2 불팅') {
+        stage('⚡ EC2 부팅') {
             steps {
                 sh '''
                     aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
@@ -30,7 +30,8 @@ pipeline {
             }
         }
 
-        stage('🧪 SonarQube Analysis') {
+        stage('🧪 SonarQube Analysis (비동기)') {
+            agent { label 'SAST' }
             steps {
                 script {
                     load 'components/sonarqube_analysis.groovy'
@@ -62,10 +63,10 @@ pipeline {
             }
         }
 
-        stage('🧪 병력 스캔 및 배포') {
+        stage('🧪 병렬 스캔 및 배포') {
             parallel {
-                zap_scan: {
-                    agent { label 'zap' }
+                stage('🔍 ZAP & SecurityHub') {
+                    agent { label 'DAST' }
                     stages {
                         stage('ZAP 스캔') {
                             steps {
@@ -102,36 +103,19 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                         }
                     }
                 }
-                deploy_pipeline: {
-                    stages {
-                        stage('🤩 Generate taskdef.json') {
-                            steps {
-                                script {
-                                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
-                                    runTaskDefGen(env)
-                                }
-                            }
-                        }
 
-                        stage('📄 Generate appspec.yaml') {
-                            steps {
-                                script {
-                                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
-                                    runAppSpecGen(env.REGION)
-                                }
-                            }
-                        }
+                stage('📦 Deploy to ECS') {
+                    agent { label 'Built-In Node' }
+                    steps {
+                        script {
+                            def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
+                            runTaskDefGen(env)
 
-                        stage('📦 Bundle for CodeDeploy') {
-                            steps {
-                                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
-                            }
-                        }
+                            def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
+                            runAppSpecGen(env.REGION)
 
-                        stage('🚀 Deploy via CodeDeploy') {
-                            steps {
-                                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
-                            }
+                            sh 'components/scripts/Bundle_for_CodeDeploy.sh'
+                            sh 'components/scripts/Deploy_via_CodeDeploy.sh'
                         }
                     }
                 }
@@ -141,7 +125,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
 
     post {
         always {
-            echo "🛡️ 병력 작업 종료 → EC2 인스턴스 중징"
+            echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
             sh "aws ec2 stop-instances --instance-ids i-08b682cce060eb8de --region ${REGION}"
         }
         success {
