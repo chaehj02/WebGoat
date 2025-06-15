@@ -11,6 +11,7 @@ pipeline {
         ZAP_SCRIPT = "zap_webgoat.sh"
         CONTAINER_NAME = "webgoat-test"
         SSH_CRED_ID = "WH1_key"
+        S3_BUCKET = "testdast" // S3_BUCKET 환경변수 누락 수정
     }
 
     stages {
@@ -20,7 +21,7 @@ pipeline {
             }
         }
 
-        stage('⚡ DAST EC2 부팅') {
+        stage('⚡ EC2 불팅') {
             steps {
                 sh '''
                     aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
@@ -61,25 +62,25 @@ pipeline {
             }
         }
 
-        stage('🧪 병렬 스캔 및 배포') {
+        stage('🧪 병력 스캔 및 배포') {
             parallel {
-                stage('🔍 ZAP & SecurityHub') {
+                zap_scan: {
                     agent { label 'zap' }
                     stages {
                         stage('ZAP 스캔') {
                             steps {
                                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
                                     sh '''
-                                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
-                                        aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
-                                        docker rm -f ${CONTAINER_NAME} || true
-                                        docker pull ${ECR_REPO}:${IMAGE_TAG}
-                                        docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
-                                        sleep 10
-                                        chmod +x ~/${ZAP_SCRIPT}
-                                        ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
-                                        EOF
-                                        scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
+ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
+  aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
+  docker rm -f ${CONTAINER_NAME} || true
+  docker pull ${ECR_REPO}:${IMAGE_TAG}
+  docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
+  sleep 10
+  chmod +x ~/${ZAP_SCRIPT}
+  ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
+EOF
+scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
                                     '''
                                 }
                             }
@@ -100,46 +101,48 @@ pipeline {
                             }
                         }
                     }
-                }
-            }
+                },
+                deploy_pipeline: {
+                    stages {
+                        stage('🤩 Generate taskdef.json') {
+                            steps {
+                                script {
+                                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
+                                    runTaskDefGen(env)
+                                }
+                            }
+                        }
 
-                stage('🧩 Generate taskdef.json') {
-                    steps {
-                        script {
-                            def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
-                            runTaskDefGen(env)
+                        stage('📄 Generate appspec.yaml') {
+                            steps {
+                                script {
+                                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
+                                    runAppSpecGen(env.REGION)
+                                }
+                            }
+                        }
+
+                        stage('📦 Bundle for CodeDeploy') {
+                            steps {
+                                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
+                            }
+                        }
+
+                        stage('🚀 Deploy via CodeDeploy') {
+                            steps {
+                                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
+                            }
                         }
                     }
                 }
-
-                stage('📄 Generate appspec.yaml') {
-                    steps {
-                        script {
-                            def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
-                            runAppSpecGen(env.REGION)
-                        }
-                    }
-                }
-
-                stage('📦 Bundle for CodeDeploy') {
-                    steps {
-                        sh 'components/scripts/Bundle_for_CodeDeploy.sh'
-                    }
-                }
-
-                stage('🚀 Deploy via CodeDeploy') {
-                    steps {
-                        sh 'components/scripts/Deploy_via_CodeDeploy.sh'
-                    }
-                }
             }
-        
+        }
     }
 
     post {
         always {
-            echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
-            sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
+            echo "🛡️ 병력 작업 종료 → EC2 인스턴스 중징"
+            sh "aws ec2 stop-instances --instance-ids i-08b682cce060eb8de --region ${REGION}"
         }
         success {
             echo "✅ Successfully built, pushed, and deployed!"
