@@ -20,7 +20,7 @@ pipeline {
             }
         }
 
-        stage('⚡ EC2 부팅') {
+        stage('⚡ DAST EC2 부팅') {
             steps {
                 sh '''
                     aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
@@ -70,16 +70,16 @@ pipeline {
                             steps {
                                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
                                     sh '''
-ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
-  aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
-  docker rm -f ${CONTAINER_NAME} || true
-  docker pull ${ECR_REPO}:${IMAGE_TAG}
-  docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
-  sleep 10
-  chmod +x ~/${ZAP_SCRIPT}
-  ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
-EOF
-scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
+                                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
+                                        aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
+                                        docker rm -f ${CONTAINER_NAME} || true
+                                        docker pull ${ECR_REPO}:${IMAGE_TAG}
+                                        docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
+                                        sleep 10
+                                        chmod +x ~/${ZAP_SCRIPT}
+                                        ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
+                                        EOF
+                                        scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
                                     '''
                                 }
                             }
