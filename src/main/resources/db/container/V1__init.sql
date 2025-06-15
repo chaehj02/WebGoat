@@ -72,15 +72,5 @@ alter table CONTAINER.user_progress_lesson_progress
 alter table CONTAINER.user_progress_lesson_progress
     add constraint FKkw1rtg14shtginbfflbglbf4m foreign key (user_progress_id) references CONTAINER.user_progress;
 
-INSERT INTO CONTAINER.web_goat_user (username, password, role)
-VALUES (
-    'testuser',
-    '$2a$10$VqVTxmwwsQHhr5ML8.MKw.Wk6mKvUMqlErECy7ex.W30yK.HaCUPW',  -- 'testuser'
-    'WEBGOAT_USER'
-);
-INSERT INTO CONTAINER.web_goat_user (username, password, role) VALUES (
-  'adminuser',
-  '$2a$10$N9qo8uLOickgx2ZMRZo5i.U4/1mI7ZltEJpZ9p6KoU3hA4Zss8tGm',  -- 'adminuser' 패스워드
-  'WEBGOAT_ADMIN'
-);
+
 
