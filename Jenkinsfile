@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'Built-In Node' }
+    agent any
 
     environment {
         ECR_REPO       = "535052053335.dkr.ecr.ap-northeast-2.amazonaws.com/wh_1/devpos"
@@ -105,7 +105,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                 }
 
                 stage('📦 Deploy to ECS') {
-                    agent { label 'Built-In Node' }
+                    agent any
                     steps {
                         script {
                             def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
