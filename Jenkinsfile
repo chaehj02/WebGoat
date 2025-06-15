@@ -101,7 +101,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                             }
                         }
                     }
-                },
+                }
                 deploy_pipeline: {
                     stages {
                         stage('🤩 Generate taskdef.json') {
