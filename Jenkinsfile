@@ -101,6 +101,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                         }
                     }
                 }
+            }
 
                 stage('🧩 Generate taskdef.json') {
                     steps {
@@ -132,7 +133,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                     }
                 }
             }
-        }
+        
     }
 
     post {
