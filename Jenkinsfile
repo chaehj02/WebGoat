@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'master' } // 전체 기본 에이전트를 master로 고정
 
     environment {
         ECR_REPO       = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
@@ -49,7 +49,7 @@ docker push ${ECR_REPO}:${IMAGE_TAG}
         stage('🧪 병렬 스캔 및 배포') {
             parallel {
                 stage('🔍 ZAP & SecurityHub') {
-                    agent { label 'DAST' }
+                    agent { label 'DAST' } // 여기만 DAST 에이전트에서 실행
                     stages {
                         stage('ZAP 스캔') {
                             steps {
@@ -87,7 +87,6 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                 }
 
                 stage('🚀 배포 (CodeDeploy)') {
-                    agent any
                     stages {
                         stage('🧩 Generate taskdef.json') {
                             steps {
