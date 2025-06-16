@@ -75,18 +75,31 @@ pipeline {
                     stages {
                         stage('ZAP 스캔') {
                             steps {
-                                withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
+                                script {
+                                    def containerName = "${CONTAINER_NAME}-${BUILD_NUMBER}"
+                                    def containerFile = "container_name_${BUILD_NUMBER}.txt"
+                                    def zapJson = "zap_test_${BUILD_NUMBER}.json"
+                                    def port = 8080 + (BUILD_NUMBER.toInteger() % 1000)
+
+                                    writeFile file: containerFile, text: containerName
+
                                     sh """
-ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
-  aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
-  docker rm -f ${CONTAINER_NAME} || true
-  docker pull ${ECR_REPO}:${IMAGE_TAG}
-  docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
-  sleep 10
-  chmod +x ~/${ZAP_SCRIPT}
-  ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
-EOF
-scp -i \$SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
+aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
+docker pull ${ECR_REPO}:${IMAGE_TAG}
+docker run -d --name ${containerName} -p ${port}:8080 ${ECR_REPO}:${IMAGE_TAG}
+
+for j in {1..15}; do
+  if curl -s http://localhost:${port} > /dev/null; then
+    echo "✅ 애플리케이션 기동 완료 (${port})"
+    break
+  fi
+  sleep 2
+done
+
+chmod +x ~/${ZAP_SCRIPT}
+~/${ZAP_SCRIPT} ${containerName}
+cp ~/zap_test.json ${zapJson}
+cp ${zapJson} zap_test.json
                                     """
                                 }
                             }
@@ -179,8 +192,23 @@ Resources:
 
     post {
         always {
-            echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
-            sh "aws ec2 stop-instances --instance-ids ${EC2_INSTANCE_ID} --region ${REGION}"
+            echo "🧹 ZAP 컨테이너 정리 중..."
+            node('zap') {
+                script {
+                    def containerFile = "container_name_${env.BUILD_NUMBER}.txt"
+                    if (fileExists(containerFile)) {
+                        def containerName = readFile(containerFile).trim()
+                        echo "[*] 종료 대상 컨테이너: ${containerName}"
+                        try {
+                            sh "docker rm -f ${containerName}"
+                        } catch (e) {
+                            echo "⚠️ 컨테이너 제거 실패: ${e.message}"
+                        }
+                    } else {
+                        echo "⚠️ container_name_${env.BUILD_NUMBER}.txt 없음 → 컨테이너 정리 생략"
+                    }
+                }
+            }
         }
         success { echo "✅ CD & Security Test 모두 완료!" }
         failure { echo "❌ 파이프라인 실패, 로그 확인 요망." }
