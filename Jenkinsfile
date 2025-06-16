@@ -49,7 +49,7 @@ docker push ${ECR_REPO}:${IMAGE_TAG}
         stage('🧪 병렬 스캔 및 배포') {
             parallel {
                 stage('🔍 ZAP & SecurityHub') {
-                    agent { label 'DAST' } // 여기만 DAST 에이전트에서 실행
+                    agent { label 'zap' } // 여기만 DAST 에이전트에서 실행
                     stages {
                         stage('ZAP 스캔') {
                             steps {
