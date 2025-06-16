@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'master' } // 전체 기본 에이전트를 master로 고정
+    agent { label 'master' }
 
     environment {
         ECR_REPO       = "159773342061.dkr.ecr.ap-northeast-2.amazonaws.com/jenkins-demo"
@@ -15,6 +15,7 @@ pipeline {
         DEPLOY_APP     = "webgoat-cd-app"
         DEPLOY_GROUP   = "webgoat-deployment-group"
         BUNDLE         = "webgoat-deploy-bundle.zip"
+        EC2_INSTANCE_ID = "i-0f3dde2aad32ae6ce"
     }
 
     stages {
@@ -28,34 +29,55 @@ pipeline {
 
         stage('⚡ EC2 부팅') {
             steps {
-                sh '''
-aws ec2 start-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}
-/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}
-                '''
+                script {
+                    def ec2State = sh(
+                        script: """
+                            aws ec2 describe-instances \
+                              --instance-ids ${EC2_INSTANCE_ID} \
+                              --region ${REGION} \
+                              --query 'Reservations[0].Instances[0].State.Name' \
+                              --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    echo "현재 EC2 상태: ${ec2State}"
+
+                    if (ec2State == 'stopped') {
+                        echo "🔄 인스턴스가 꺼져 있음 → 시작 시도"
+                        sh "aws ec2 start-instances --instance-ids ${EC2_INSTANCE_ID} --region ${REGION}"
+                        sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
+                    } else if (ec2State == 'running') {
+                        echo "✅ 인스턴스가 이미 실행 중 → SSH 접속 확인"
+                        sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
+                    } else {
+                        error "🚫 EC2 인스턴스 상태(${ec2State})가 시작 가능한 상태가 아닙니다."
+                    }
+                }
             }
         }
 
         stage('🐳 Docker Build & Push') {
             steps {
                 sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
-                sh '''
-aws ecr get-login-password --region ${REGION} \
-  | docker login --username AWS --password-stdin ${ECR_REPO}
-docker push ${ECR_REPO}:${IMAGE_TAG}
-                '''
+                sh """
+                    aws ecr get-login-password --region ${REGION} \
+                      | docker login --username AWS --password-stdin ${ECR_REPO}
+                    docker push ${ECR_REPO}:${IMAGE_TAG}
+                """
             }
         }
 
         stage('🧪 병렬 스캔 및 배포') {
             parallel {
                 stage('🔍 ZAP & SecurityHub') {
-                    agent { label 'zap' } // 여기만 DAST 에이전트에서 실행
+                    agent { label 'zap' }
                     stages {
                         stage('ZAP 스캔') {
                             steps {
                                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
-                                    sh '''
-ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
+                                    sh """
+ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
   aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
   docker rm -f ${CONTAINER_NAME} || true
   docker pull ${ECR_REPO}:${IMAGE_TAG}
@@ -64,8 +86,8 @@ ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
   chmod +x ~/${ZAP_SCRIPT}
   ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 EOF
-scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
-                                    '''
+scp -i \$SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
+                                    """
                                 }
                             }
                         }
@@ -115,6 +137,7 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
                                 }
                             }
                         }
+
                         stage('📄 Generate appspec.yaml') {
                             steps {
                                 script {
@@ -133,18 +156,19 @@ Resources:
                                 }
                             }
                         }
+
                         stage('📦 Bundle & Deploy') {
                             steps {
-                                sh 'zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json'
-                                sh '''
-aws s3 cp ${BUNDLE} s3://${S3_BUCKET}/${BUNDLE} --region ${REGION}
-aws deploy create-deployment \
-  --application-name ${DEPLOY_APP} \
-  --deployment-group-name ${DEPLOY_GROUP} \
-  --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-  --s3-location bucket=${S3_BUCKET},bundleType=zip,key=${BUNDLE} \
-  --region ${REGION}
-                                '''
+                                sh "zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json"
+                                sh """
+                                    aws s3 cp ${BUNDLE} s3://${S3_BUCKET}/${BUNDLE} --region ${REGION}
+                                    aws deploy create-deployment \
+                                      --application-name ${DEPLOY_APP} \
+                                      --deployment-group-name ${DEPLOY_GROUP} \
+                                      --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+                                      --s3-location bucket=${S3_BUCKET},bundleType=zip,key=${BUNDLE} \
+                                      --region ${REGION}
+                                """
                             }
                         }
                     }
@@ -156,7 +180,7 @@ aws deploy create-deployment \
     post {
         always {
             echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
-            sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
+            sh "aws ec2 stop-instances --instance-ids ${EC2_INSTANCE_ID} --region ${REGION}"
         }
         success { echo "✅ CD & Security Test 모두 완료!" }
         failure { echo "❌ 파이프라인 실패, 로그 확인 요망." }
