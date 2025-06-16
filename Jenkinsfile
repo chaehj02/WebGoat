@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'master' }
+    agent any
 
     environment {
         ECR_REPO       = "535052053335.dkr.ecr.ap-northeast-2.amazonaws.com/wh_1/devpos"
@@ -11,7 +11,7 @@ pipeline {
         ZAP_SCRIPT     = "zap_webgoat.sh"
         CONTAINER_NAME = "webgoat-test"
         SSH_CRED_ID    = "WH1_key"
-        S3_BUCKET      = "testdast"
+        S3_BUCKET      = "testdast""
     }
 
     stages {
