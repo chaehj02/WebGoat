@@ -11,7 +11,7 @@ pipeline {
         ZAP_SCRIPT     = "zap_webgoat.sh"
         CONTAINER_NAME = "webgoat-test"
         SSH_CRED_ID    = "WH1_key"
-        S3_BUCKET      = "testdast""
+        S3_BUCKET      = "testdast"
     }
 
     stages {
