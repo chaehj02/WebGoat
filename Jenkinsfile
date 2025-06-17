@@ -15,66 +15,62 @@ pipeline {
     }
 
     stages {
-        stage('🧪 Async SonarQube + CI/CD') {
-            parallel {
-                stage('SonarQube Analysis') {
-                    steps {
-                        script {
-                            load 'components/sonarqube_analysis.groovy'
-                        }
-                    }
+        stage('📦 Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('⚡ EC2 부팅') {
+            steps {
+                sh '''
+                    aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
+                    /var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}
+                '''
+            }
+        }
+
+        stage('🧪 SonarQube Analysis') {
+            steps {
+                script {
+                    load 'components/sonarqube_analysis.groovy'
                 }
+            }
+        }
 
-                stage('CI/CD 전체 흐름') {
+        stage('🔨 Build JAR') {
+            steps {
+                sh 'components/scripts/Build_JAR.sh'
+            }
+        }
+
+        stage('🐳 Docker Build') {
+            steps {
+                sh 'components/scripts/Docker_Build.sh'
+            }
+        }
+
+        stage('🔐 ECR Login') {
+            steps {
+                sh 'components/scripts/ECR_Login.sh'
+            }
+        }
+
+        stage('🚀 Push to ECR') {
+            steps {
+                sh 'components/scripts/Push_to_ECR.sh'
+            }
+        }
+
+        stage('🧪 병렬 스캔 및 배포') {
+            parallel {
+                stage('🔍 ZAP & SecurityHub') {
+                    agent { label 'zap' }
                     stages {
-                        stage('📦 Checkout') {
+                        stage('ZAP 스캔') {
                             steps {
-                                checkout scm
-                            }
-                        }
-
-                        stage('⚡ EC2 부팅') {
-                            steps {
-                                sh '''
-                                    aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
-                                    /var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}
-                                '''
-                            }
-                        }
-
-                        stage('🔨 Build JAR') {
-                            steps {
-                                sh 'components/scripts/Build_JAR.sh'
-                            }
-                        }
-
-                        stage('🐳 Docker Build') {
-                            steps {
-                                sh 'components/scripts/Docker_Build.sh'
-                            }
-                        }
-
-                        stage('🔐 ECR Login') {
-                            steps {
-                                sh 'components/scripts/ECR_Login.sh'
-                            }
-                        }
-
-                        stage('🚀 Push to ECR') {
-                            steps {
-                                sh 'components/scripts/Push_to_ECR.sh'
-                            }
-                        }
-
-                        stage('🧪 병렬 스캔 및 배포') {
-                            parallel {
-                                stage('ZAP & SecurityHub 병렬') {
-                                    agent { label 'DAST' }
-                                    stages {
-                                        stage('ZAP 스캔') {
-                                            steps {
-                                                withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
-                                                    sh '''
+                                withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
+                                    sh '''
 ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
   aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
   docker rm -f ${CONTAINER_NAME} || true
@@ -85,63 +81,55 @@ ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
   ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
 EOF
 scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
-                                                    '''
-                                                }
-                                            }
-                                        }
-
-                                        stage('SecurityHub 전송') {
-                                            steps {
-                                                script {
-                                                    def timestamp = new Date().format("yyyyMMdd_HHmmss")
-                                                    def s3_key = "default/zap_test_${timestamp}.json"
-                                                    try {
-                                                        sh "aws s3 cp zap_test.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}"
-                                                        env.S3_JSON_KEY = s3_key
-                                                    } catch (err) {
-                                                        echo "⚠️ S3 업로드 실패 (무시): ${err}"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    '''
                                 }
+                            }
+                        }
 
-                                stage('CodeDeploy 병렬') {
-                                    stages {
-                                        stage('🧩 Generate taskdef.json') {
-                                            steps {
-                                                script {
-                                                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
-                                                    runTaskDefGen(env)
-                                                }
-                                            }
-                                        }
-
-                                        stage('📄 Generate appspec.yaml') {
-                                            steps {
-                                                script {
-                                                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
-                                                    runAppSpecGen(env.REGION)
-                                                }
-                                            }
-                                        }
-
-                                        stage('📦 Bundle for CodeDeploy') {
-                                            steps {
-                                                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
-                                            }
-                                        }
-
-                                        stage('🚀 Deploy via CodeDeploy') {
-                                            steps {
-                                                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
-                                            }
-                                        }
+                        stage('SecurityHub 전송') {
+                            steps {
+                                script {
+                                    def timestamp = new Date().format("yyyyMMdd_HHmmss")
+                                    def s3_key = "default/zap_test_${timestamp}.json"
+                                    try {
+                                        sh "aws s3 cp zap_test.json s3://${S3_BUCKET}/${s3_key} --region ${REGION}"
+                                        env.S3_JSON_KEY = s3_key
+                                    } catch (err) {
+                                        echo "⚠️ S3 업로드 실패 (무시): ${err}"
                                     }
                                 }
                             }
                         }
+                    }
+                }
+
+                stage('🧩 Generate taskdef.json') {
+                    steps {
+                        script {
+                            def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
+                            runTaskDefGen(env)
+                        }
+                    }
+                }
+
+                stage('📄 Generate appspec.yaml') {
+                    steps {
+                        script {
+                            def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
+                            runAppSpecGen(env.REGION)
+                        }
+                    }
+                }
+
+                stage('📦 Bundle for CodeDeploy') {
+                    steps {
+                        sh 'components/scripts/Bundle_for_CodeDeploy.sh'
+                    }
+                }
+
+                stage('🚀 Deploy via CodeDeploy') {
+                    steps {
+                        sh 'components/scripts/Deploy_via_CodeDeploy.sh'
                     }
                 }
             }
@@ -150,22 +138,14 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
 
     post {
         always {
-            steps {
-                echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
-                sh "aws ec2 stop-instances --instance-ids i-08b682cce060eb8de --region ${REGION}"
-            }
+            echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
+            sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
         }
-
         success {
-            steps {
-                echo "✅ Successfully built, pushed, and deployed!"
-            }
+            echo "✅ Successfully built, pushed, and deployed!"
         }
-
         failure {
-            steps {
-                echo "❌ Build or deployment failed. Check logs!"
-            }
+            echo "❌ Build or deployment failed. Check logs!"
         }
     }
 }
