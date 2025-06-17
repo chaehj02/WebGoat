@@ -12,6 +12,8 @@ pipeline {
         CONTAINER_NAME = "webgoat-test"
         SSH_CRED_ID    = "WH1_key"
         S3_BUCKET      = "testdast"
+	EC2_INSTANCE_ID = "i-08b682cce060eb8de"
+
     }
 
     stages {
@@ -21,14 +23,37 @@ pipeline {
             }
         }
 
-        stage('⚡ EC2 부팅') {
+	stage('⚡ EC2 부팅') {
             steps {
-                sh '''
-                    aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
+                script {
+                    def ec2State = sh(
+                        script: """
+                            aws ec2 describe-instances \
+                              --instance-ids ${EC2_INSTANCE_ID} \
+                              --region ${REGION} \
+                              --query 'Reservations[0].Instances[0].State.Name' \
+                              --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    echo "현재 EC2 상태: ${ec2State}"
+
+                    if (ec2State == 'stopped') {
+                        echo "🔄 인스턴스가 꺼져 있음 → 시작 시도"
+                        aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
                     /var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}
-                '''
+                    } else if (ec2State == 'running') {
+                        echo "✅ 인스턴스가 이미 실행 중 → SSH 접속 확인"
+                        sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
+                    } else {
+                        error "🚫 EC2 인스턴스 상태(${ec2State})가 시작 가능한 상태가 아닙니다."
+                    }
+                }
             }
         }
+
+        
 
         stage('🧪 SonarQube Analysis') {
             steps {
@@ -65,27 +90,39 @@ pipeline {
         stage('🧪 병렬 스캔 및 배포') {
             parallel {
                 stage('🔍 ZAP & SecurityHub') {
-                    agent { label 'zap' }
+                    agent { label 'DAST' }
                     stages {
                         stage('ZAP 스캔') {
                             steps {
-                                withCredentials([sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY')]) {
-                                    sh '''
-ssh -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST} <<EOF
-  aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
-  docker rm -f ${CONTAINER_NAME} || true
-  docker pull ${ECR_REPO}:${IMAGE_TAG}
-  docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${ECR_REPO}:${IMAGE_TAG}
-  sleep 10
-  chmod +x ~/${ZAP_SCRIPT}
-  ~/${ZAP_SCRIPT} ${CONTAINER_NAME}
-EOF
-scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.json .
-                                    '''
+                                script {
+                                    def containerName = "${CONTAINER_NAME}-${BUILD_NUMBER}"
+                                    def containerFile = "container_name_${BUILD_NUMBER}.txt"
+                                    def zapJson = "zap_test_${BUILD_NUMBER}.json"
+                                    def port = 8080 + (BUILD_NUMBER.toInteger() % 1000)
+
+                                    writeFile file: containerFile, text: containerName
+
+                                    sh """
+aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
+docker pull ${ECR_REPO}:${IMAGE_TAG}
+docker run -d --name ${containerName} -p ${port}:8080 ${ECR_REPO}:${IMAGE_TAG}
+
+for j in {1..15}; do
+  if curl -s http://localhost:${port} > /dev/null; then
+    echo "✅ 애플리케이션 기동 완료 (${port})"
+    break
+  fi
+  sleep 2
+done
+
+chmod +x ~/${ZAP_SCRIPT}
+~/${ZAP_SCRIPT} ${containerName}
+cp ~/zap_test.json ${zapJson}
+cp ${zapJson} zap_test.json
+                                    """
                                 }
                             }
                         }
-
                         stage('SecurityHub 전송') {
                             steps {
                                 script {
@@ -136,10 +173,25 @@ scp -i $SSH_KEY -o StrictHostKeyChecking=no ec2-user@${DAST_HOST}:~/zap_test.jso
         }
     }
 
-    post {
+     post {
         always {
-            echo "🛑 병렬 작업 종료 → EC2 인스턴스 중지"
-            sh "aws ec2 stop-instances --instance-ids i-0f3dde2aad32ae6ce --region ${REGION}"
+            echo "🧹 ZAP 컨테이너 정리 중..."
+            node('DAST') {
+                script {
+                    def containerFile = "container_name_${env.BUILD_NUMBER}.txt"
+                    if (fileExists(containerFile)) {
+                        def containerName = readFile(containerFile).trim()
+                        echo "[*] 종료 대상 컨테이너: ${containerName}"
+                        try {
+                            sh "docker rm -f ${containerName}"
+                        } catch (e) {
+                            echo "⚠️ 컨테이너 제거 실패: ${e.message}"
+                        }
+                    } else {
+                        echo "⚠️ container_name_${env.BUILD_NUMBER}.txt 없음 → 컨테이너 정리 생략"
+                    }
+                }
+            }
         }
         success {
             echo "✅ Successfully built, pushed, and deployed!"
