@@ -104,22 +104,22 @@ pipeline {
                                     writeFile file: containerFile, text: containerName
 
                                     sh """
-aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
-docker pull ${ECR_REPO}:latest
-docker run -d --name ${containerName} -p ${port}:8080 ${ECR_REPO}:latest
+                                        aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
+                                        docker pull ${ECR_REPO}:latest
+                                        docker run -d --name ${containerName} -p ${port}:8080 ${ECR_REPO}:latest
 
-for j in {1..15}; do
-  if curl -s http://localhost:${port} > /dev/null; then
-    echo "✅ 애플리케이션 기동 완료 (${port})"
-    break
-  fi
-  sleep 2
-done
+                                        for j in {1..15}; do
+                                        if curl -s http://localhost:${port} > /dev/null; then
+                                            echo "✅ 애플리케이션 기동 완료 (${port})"
+                                            break
+                                        fi
+                                        sleep 2
+                                        done
 
-chmod +x ~/${ZAP_SCRIPT}
-~/${ZAP_SCRIPT} ${containerName}
-cp ~/zap_test.json ${zapJson}
-cp ${zapJson} zap_test.json
+                                        chmod +x ~/${ZAP_SCRIPT}
+                                        ~/${ZAP_SCRIPT} ${containerName}
+                                        cp ~/zap_test.json ${zapJson}
+                                        cp ${zapJson} zap_test.json
                                     """
                                 }
                             }
