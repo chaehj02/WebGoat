@@ -105,8 +105,8 @@ pipeline {
 
                                     sh """
 aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
-docker pull ${ECR_REPO}:lastest
-docker run -d --name ${containerName} -p ${port}:8080 ${ECR_REPO}:lastest
+docker pull ${ECR_REPO}:latest
+docker run -d --name ${containerName} -p ${port}:8080 ${ECR_REPO}:latest
 
 for j in {1..15}; do
   if curl -s http://localhost:${port} > /dev/null; then
