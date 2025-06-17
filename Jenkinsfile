@@ -58,8 +58,8 @@ pipeline {
 
         stage('🧪 SonarQube Analysis') {
             parallel{
-                agent { label 'SAST'}
                 stage ('SAST - SonarQube') {
+                    agent { label 'SAST'}
                     steps {
                         script {
                             load 'components/sonarqube_analysis.groovy'
