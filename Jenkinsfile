@@ -140,7 +140,8 @@ cp ${zapJson} zap_test.json
                         }
                     }
                 }
-
+                stage('🚀 배포 (CodeDeploy)') {
+                    stages {
                 stage('🧩 Generate taskdef.json') {
                     steps {
                         script {
@@ -171,6 +172,8 @@ cp ${zapJson} zap_test.json
                     }
                 }
             }
+        }
+    }
         }
     }
 
