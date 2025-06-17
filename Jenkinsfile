@@ -58,9 +58,11 @@ pipeline {
 
         stage('🧪 SonarQube Analysis') {
             parallel{
-                steps {
-                    script {
-                        load 'components/sonarqube_analysis.groovy'
+                stage ('SAST - SonarQube') {
+                    steps {
+                        script {
+                            load 'components/sonarqube_analysis.groovy'
+                        }
                     }
                 }
             }
