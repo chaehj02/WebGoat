@@ -41,8 +41,8 @@ pipeline {
 
                     if (ec2State == 'stopped') {
                         echo "🔄 인스턴스가 꺼져 있음 → 시작 시도"
-                        aws ec2 start-instances --instance-ids i-08b682cce060eb8de --region ${REGION}
-                    /var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}
+                        sh "aws ec2 start-instances --instance-ids ${EC2_INSTANCE_ID} --region ${REGION}"
+                        sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
                     } else if (ec2State == 'running') {
                         echo "✅ 인스턴스가 이미 실행 중 → SSH 접속 확인"
                         sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
@@ -51,6 +51,7 @@ pipeline {
                     }
                 }
             }
+        }
         }
 
         
