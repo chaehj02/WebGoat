@@ -58,6 +58,7 @@ pipeline {
 
         stage('🧪 SonarQube Analysis') {
             parallel{
+                agent { label 'SAST'}
                 stage ('SAST - SonarQube') {
                     steps {
                         script {
