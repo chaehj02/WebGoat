@@ -1,11 +1,13 @@
 // SonarQube 분석 시작
+def scannerHome = tool 'MySonarScanner'
+
 withSonarQubeEnv(env.SONARQUBE_ENV) {
-    sh '''
-    /opt/sonar-scanner/bin/sonar-scanner \
+    sh """
+    ${scannerHome}/bin/sonar-scanner \
         -Dsonar.projectKey=webgoat \
         -Dsonar.sources=. \
         -Dsonar.java.binaries=target/classes
-    '''
+    """
 }
 
 // SonarQube API 결과 수집 및 파일 저장
