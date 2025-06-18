@@ -9,6 +9,7 @@ ${mvnHome}/bin/mvn compile -DskipTests
 
 withSonarQubeEnv(env.SONARQUBE_ENV) {
     sh """
+    export NODE_OPTIONS=--max_old_space_size=4096
     ${scannerHome}/bin/sonar-scanner \
         -Dsonar.projectKey=webgoat \
         -Dsonar.sources=. \
