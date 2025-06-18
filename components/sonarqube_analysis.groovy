@@ -2,6 +2,8 @@
 def scannerHome = tool 'MySonarScanner'
 def mvnHome = tool 'Maven3'
 
+sh 'echo "[💡 메모리 상태]" && free -h && echo "[💡 스왑 상태]" && swapon --show'
+
 withSonarQubeEnv(env.SONARQUBE_ENV) {
     sh """
     export NODE_OPTIONS=--max_old_space_size=2048
