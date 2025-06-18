@@ -1,5 +1,11 @@
 // SonarQube 분석 시작
 def scannerHome = tool 'MySonarScanner'
+def mvnHome = tool 'Maven3'
+
+sh """
+${mvnHome}/bin/mvn compile -DskipTests
+"""
+
 
 withSonarQubeEnv(env.SONARQUBE_ENV) {
     sh """
