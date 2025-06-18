@@ -32,5 +32,5 @@ withSonarQubeEnv(env.SONARQUBE_ENV) {
 
 // S3로 업로드
 sh """
-aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region $REGION
+aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region ${env.REGION}
 """
