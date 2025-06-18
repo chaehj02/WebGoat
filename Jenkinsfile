@@ -19,7 +19,6 @@ pipeline {
                 stage ('SAST - SonarQube') {
                     agent { label 'SAST'}
                     steps {
-                        sh 'mvn compile -DskipTests'
                         script {
                             load 'components/sonarqube_analysis.groovy'
                         }
