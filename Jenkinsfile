@@ -12,8 +12,7 @@ pipeline {
         CONTAINER_NAME = "webgoat-test"
         SSH_CRED_ID    = "WH1_key"
         S3_BUCKET      = "testdast"
-	EC2_INSTANCE_ID = "i-08b682cce060eb8de"
-
+	    EC2_INSTANCE_ID = "i-08b682cce060eb8de"
     }
 
     stages {
@@ -27,7 +26,7 @@ pipeline {
             agent {label 'SAST'}
             steps {
                 script {
-                    sh 'components/sonarqube_analysis.groovy'
+                    sh 'components/sonarqube_analysis.sh'
                 }
             }
         }
