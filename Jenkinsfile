@@ -27,36 +27,6 @@ pipeline {
             steps { sh 'mvn clean package -DskipTests' }
         }
 
-        stage('⚡ EC2 부팅') {
-            steps {
-                script {
-                    def ec2State = sh(
-                        script: """
-                            aws ec2 describe-instances \
-                              --instance-ids ${EC2_INSTANCE_ID} \
-                              --region ${REGION} \
-                              --query 'Reservations[0].Instances[0].State.Name' \
-                              --output text
-                        """,
-                        returnStdout: true
-                    ).trim()
-
-                    echo "현재 EC2 상태: ${ec2State}"
-
-                    if (ec2State == 'stopped') {
-                        echo "🔄 인스턴스가 꺼져 있음 → 시작 시도"
-                        sh "aws ec2 start-instances --instance-ids ${EC2_INSTANCE_ID} --region ${REGION}"
-                        sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
-                    } else if (ec2State == 'running') {
-                        echo "✅ 인스턴스가 이미 실행 중 → SSH 접속 확인"
-                        sh "/var/lib/jenkins/scripts/wait_for_ssh_ready.sh ${DAST_HOST}"
-                    } else {
-                        error "🚫 EC2 인스턴스 상태(${ec2State})가 시작 가능한 상태가 아닙니다."
-                    }
-                }
-            }
-        }
-
         stage('🐳 Docker Build & Push') {
             steps {
                 sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
