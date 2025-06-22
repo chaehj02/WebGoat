@@ -23,10 +23,10 @@ echo "$containerName" > "$containerFile"
 
 echo "[*] Docker 로그인 및 Pull"
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REPO"
-docker pull "$ECR_REPO:latest"
+docker pull "$ECR_REPO:${IMAGE_TAG}"
 
 echo "[*] 컨테이너 실행 중..."
-docker run -d --name "$containerName" -p "${port}:8080" "$ECR_REPO:latest"
+docker run -d --name "$containerName" -p "${port}:8080" "$ECR_REPO:${IMAGE_TAG}"
 
 echo "[*] Health check..."
 for j in {1..15}; do
