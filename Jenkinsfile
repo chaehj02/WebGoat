@@ -40,7 +40,7 @@ pipeline {
 
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
             steps {
-                sh 'components/scripts/Zap_and_Send.sh'
+                sh './Zap_and_Send.sh'
             }
         }
 
