@@ -26,7 +26,7 @@ pipeline {
             agent {label 'SAST'}
             steps {
                 script {
-                    sh 'components/sonarqube_analysis.sh'
+                    sh 'components/scripts/sonarqube_analysis.sh'
                 }
             }
         }
