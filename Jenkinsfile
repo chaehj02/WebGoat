@@ -74,12 +74,10 @@ pipeline {
             }
         }
 
-
-
-                        stage('🧩 Generate taskdef.json') {
-                            steps {
-                                script {
-                                    def taskdef = """{
+        stage('🧩 Generate taskdef.json') {
+            steps {
+                script {
+                    def taskdef = """{
   \"family\": \"webgoat-taskdef\",
   \"networkMode\": \"awsvpc\",
   \"containerDefinitions\": [
@@ -99,16 +97,19 @@ pipeline {
   \"memory\": \"512\",
   \"executionRoleArn\": \"arn:aws:iam::159773342061:role/ecsTaskExecutionRole\"
 }"""
-                                    writeFile file: 'taskdef.json', text: taskdef
-                                }
-                            }
-                        }
+                    writeFile file: 'taskdef.json', text: taskdef
+                }
+            }
+        }
 
-                        stage('📄 Generate appspec.yaml') {
-                            steps {
-                                script {
-                                    def taskDefArn = sh(script: "aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --region ${REGION} --output text", returnStdout: true).trim()
-                                    def appspec = """version: 1
+        stage('📄 Generate appspec.yaml') {
+            steps {
+                script {
+                    def taskDefArn = sh(
+                      script: "aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --region ${REGION} --output text",
+                      returnStdout: true
+                    ).trim()
+                    def appspec = """version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
@@ -118,28 +119,26 @@ Resources:
           ContainerName: \"webgoat\"
           ContainerPort: 8080
 """
-                                    writeFile file: 'appspec.yaml', text: appspec
-                                }
-                            }
-                        }
-
-                        stage('📦 Bundle & Deploy') {
-                            steps {
-                                sh "zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json"
-                                sh """
-                                    aws s3 cp ${BUNDLE} s3://${S3_BUCKET}/${BUNDLE} --region ${REGION}
-                                    aws deploy create-deployment \
-                                      --application-name ${DEPLOY_APP} \
-                                      --deployment-group-name ${DEPLOY_GROUP} \
-                                      --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-                                      --s3-location bucket=${S3_BUCKET},bundleType=zip,key=${BUNDLE} \
-                                      --region ${REGION}
-                                """
-                            }
-                        }
-                    }
+                    writeFile file: 'appspec.yaml', text: appspec
                 }
- 
+            }
+        }
+
+        stage('📦 Bundle & Deploy') {
+            steps {
+                sh "zip -r ${BUNDLE} appspec.yaml Dockerfile taskdef.json"
+                sh """
+                    aws s3 cp ${BUNDLE} s3://${S3_BUCKET}/${BUNDLE} --region ${REGION}
+                    aws deploy create-deployment \
+                      --application-name ${DEPLOY_APP} \
+                      --deployment-group-name ${DEPLOY_GROUP} \
+                      --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+                      --s3-location bucket=${S3_BUCKET},bundleType=zip,key=${BUNDLE} \
+                      --region ${REGION}
+                """
+            }
+        }
+    }
 
     post {
         always {
