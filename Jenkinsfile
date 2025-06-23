@@ -41,7 +41,6 @@ pipeline {
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
              agent { label 'zap' }
             steps {
-                sh 'chmod +x ./Zap_and_Send.sh'
                 sh './Zap_and_Send.sh'
             }
         }
