@@ -41,7 +41,8 @@ pipeline {
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
              agent { label 'zap' }
             steps {
-                sh './Zap_and_Send.sh'
+                sh './components/scripts/Zap_and_Send.sh'
+
             }
         }
 
