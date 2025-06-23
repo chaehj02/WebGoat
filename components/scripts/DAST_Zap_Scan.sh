@@ -1,5 +1,5 @@
 #!/bin/bash
-source ./dot.env
+source components/dot.env
 set -e
 
 # 기본값 설정
