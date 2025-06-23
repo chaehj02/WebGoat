@@ -144,26 +144,7 @@ pipeline {
         }
     }
 
-     post {
-        always {
-            echo "🧹 ZAP 컨테이너 정리 중..."
-            node('DAST') {
-                script {
-                    def containerFile = "container_name_${env.BUILD_NUMBER}.txt"
-                    if (fileExists(containerFile)) {
-                        def containerName = readFile(containerFile).trim()
-                        echo "[*] 종료 대상 컨테이너: ${containerName}"
-                        try {
-                            sh "docker rm -f ${containerName}"
-                        } catch (e) {
-                            echo "⚠️ 컨테이너 제거 실패: ${e.message}"
-                        }
-                    } else {
-                        echo "⚠️ container_name_${env.BUILD_NUMBER}.txt 없음 → 컨테이너 정리 생략"
-                    }
-                }
-            }
-        }
+     
         success {
             echo "✅ Successfully built, pushed, and deployed!"
         }
