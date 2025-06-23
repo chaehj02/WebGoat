@@ -56,3 +56,10 @@ if aws s3 cp zap_test.json "s3://${S3_BUCKET}/${s3_key}" --region "$REGION"; the
 else
     echo "⚠️ S3 업로드 실패 (무시)"
 fi
+
+echo "[*] 컨테이너 정리 시도 → $containerName"
+if docker ps -a --format '{{.Names}}' | grep -q "^${containerName}$"; then
+    docker rm -f "$containerName" && echo "🧹 컨테이너 제거 완료: $containerName" || echo "⚠️ 컨테이너 제거 실패"
+else
+    echo "⚠️ 컨테이너가 존재하지 않음: $containerName"
+fi
