@@ -29,6 +29,19 @@ pipeline {
             }
         }
 
+        stage('🚀 Generate SBOM via CDXGEN Docker') {
+            agent { label 'SCA' }
+            steps {
+                script {
+                    def repoUrl = scm.userRemoteConfigs[0].url
+                    def repoName = repoUrl.tokenize('/').last().replace('.git', '')
+                    
+                    sh "/home/ec2-user/run_sbom_pipeline.sh ${repoUrl} ${repoName}"
+                }
+            }
+        }
+
+
         stage('🐳 Docker Build') {
             steps {
                 sh 'components/scripts/Docker_Build.sh'
