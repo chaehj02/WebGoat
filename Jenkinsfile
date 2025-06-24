@@ -48,44 +48,42 @@ pipeline {
             }
         }
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
-             agent { label 'DAST' }
+            agent { label 'DAST' }
             steps {
                 sh 'components/scripts/DAST_Zap_Scan.sh'
             }
         }
 
-                stage('🧩 Generate taskdef.json') {
-                    steps {
-                        script {
-                            def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
-                            runTaskDefGen(env)
-                        }
-                    }
+        stage('🧩 Generate taskdef.json') {
+            steps {
+                script {
+                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
+                    runTaskDefGen(env)
                 }
+            }
+        }
 
-                stage('📄 Generate appspec.yaml') {
-                    steps {
-                        script {
-                            def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
-                            runAppSpecGen(env.REGION)
-                        }
-                    }
+        stage('📄 Generate appspec.yaml') {
+            steps {
+                script {
+                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
+                    runAppSpecGen(env.REGION)
                 }
+            }
+        }
 
-                stage('📦 Bundle for CodeDeploy') {
-                    steps {
-                        sh 'components/scripts/Bundle_for_CodeDeploy.sh'
-                    }
-                }
+        stage('📦 Bundle for CodeDeploy') {
+            steps {
+                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
+            }
+        }
 
-                stage('🚀 Deploy via CodeDeploy') {
-                    steps {
-                        sh 'components/scripts/Deploy_via_CodeDeploy.sh'
-                    }
-                }
+        stage('🚀 Deploy via CodeDeploy') {
+            steps {
+                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
+            }
+        }
       
-
-     
         success {
             echo "✅ Successfully built, pushed, and deployed!"
         }
