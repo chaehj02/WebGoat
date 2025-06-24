@@ -16,7 +16,7 @@ check_active_deployment() {
 }
 
 # 최대 대기 시간 (초)
-MAX_WAIT_SECONDS=600  # 10분
+MAX_WAIT_SECONDS=3600  # 60분
 WAIT_INTERVAL=10
 elapsed=0
 
