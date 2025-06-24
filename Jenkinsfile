@@ -50,7 +50,8 @@ pipeline {
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
             agent { label 'DAST' }
             steps {
-                sh 'components/scripts/DAST_Zap_Scan.sh'
+                // sh 'components/scripts/DAST_Zap_Scan.sh'
+                sh 'nohup components/scripts/DAST_Zap_Scan.sh > zap_bg.log 2>&1 &'
             }
         }
 
