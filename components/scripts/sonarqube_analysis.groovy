@@ -2,13 +2,14 @@
 def scannerHome = tool 'MySonarScanner'
 def mvnHome = tool 'Maven3'
 
-sh 'echo "[💡 메모리 상태]" && free -h && echo "[💡 스왑 상태]" && swapon --show'
+sh """
+${mvnHome}/bin/mvn compile -DskipTests
+"""
 
-sh "${mvnHome}/bin/mvn compile -DskipTests"
 
 withSonarQubeEnv(env.SONARQUBE_ENV) {
     sh """
-    export NODE_OPTIONS=--max_old_space_size=2048
+    export NODE_OPTIONS=--max_old_space_size=4096
     ${scannerHome}/bin/sonar-scanner \
         -Dsonar.projectKey=webgoat \
         -Dsonar.sources=. \
@@ -32,5 +33,5 @@ withSonarQubeEnv(env.SONARQUBE_ENV) {
 
 // S3로 업로드
 sh """
-aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region ap-northeast-2
+aws s3 cp ${env.REPORT_FILE} s3://ss-bucket-0305/sonarqube-reports/${env.REPORT_FILE} --region ${env.REGION}
 """

@@ -19,7 +19,7 @@ pipeline {
             agent {label 'SAST'}
             steps {
                 script {
-                    sh 'components/scripts/sonarqube_analysis.sh'
+                    load 'components/sonarqube_analysis.groovy'
                 }
             }
         }
