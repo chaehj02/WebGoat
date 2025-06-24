@@ -8,7 +8,7 @@ BUILD_NUMBER="${BUILD_NUMBER:-1}"
 REGION="${REGION:-ap-northeast-2}"
 ECR_REPO="${ECR_REPO}"
 ZAP_SCRIPT="${ZAP_SCRIPT:-zap_webgoat.sh}"
-S3_BUCKET="${S3_BUCKET:-testdast}"
+S3_BUCKET_DAST="${S3_BUCKET:-testdast}"
 
 # 동적 변수 설정
 containerName="${CONTAINER_NAME}-${BUILD_NUMBER}"
@@ -51,8 +51,8 @@ cp ~/zap_test.json "$zapJson"
 cp "$zapJson" zap_test.json
 
 echo "[*] SecurityHub용 S3 업로드"
-if aws s3 cp zap_test.json "s3://${S3_BUCKET}/${s3_key}" --region "$REGION"; then
-    echo "✅ S3 업로드 완료 → s3://${S3_BUCKET}/${s3_key}"
+if aws s3 cp zap_test.json "s3://${S3_BUCKET_DAST}/${s3_key}" --region "$REGION"; then
+    echo "✅ S3 업로드 완료 → s3://${S3_BUCKET_DAST}/${s3_key}"
 else
     echo "⚠️ S3 업로드 실패 (무시)"
 fi
