@@ -2,10 +2,9 @@ pipeline {
     agent { label 'master' }
 
     environment {
-        JAVA_HOME      = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
-        PATH           = "${env.JAVA_HOME}/bin:${env.PATH}"
-        SSH_CRED_ID    = "WH1_key"
-
+        JAVA_HOME   = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
+        PATH        = "${env.JAVA_HOME}/bin:${env.PATH}"
+        SSH_CRED_ID = "WH1_key"
     }
 
     stages {
@@ -16,7 +15,7 @@ pipeline {
         }
 
         stage('🧪 SonarQube Analysis') {
-            agent {label 'SAST'}
+            agent { label 'SAST' }
             steps {
                 script {
                     sh 'components/scripts/sonarqube_analysis.sh'
@@ -47,6 +46,7 @@ pipeline {
                 sh 'components/scripts/Push_to_ECR.sh'
             }
         }
+
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
             agent { label 'DAST' }
             steps {
@@ -83,7 +83,9 @@ pipeline {
                 sh 'components/scripts/Deploy_via_CodeDeploy.sh'
             }
         }
-      
+    }
+
+    post {
         success {
             echo "✅ Successfully built, pushed, and deployed!"
         }
