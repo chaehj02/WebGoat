@@ -1,6 +1,6 @@
 def call(region) {
     def taskDefArn = sh(
-        script: "aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --region ${region} --output text",
+        script: "aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --region ap-northeast-2 --output text",
         returnStdout: true
     ).trim()
 
