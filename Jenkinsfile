@@ -29,17 +29,33 @@ pipeline {
             }
         }
 
-        stage('🚀 Generate SBOM via CDXGEN Docker') {
-            agent { label 'SCA' }
+            stage('🔍 도커 이미지 태그 결정') {
             steps {
                 script {
-                    def repoUrl = scm.userRemoteConfigs[0].url
-                    def repoName = repoUrl.tokenize('/').last().replace('.git', '')
-                    
-                    sh "/home/ec2-user/run_sbom_pipeline.sh ${repoUrl} ${repoName}"
+                    env.JAVA_VERSION = sh(
+                        script: "python3 components/scripts/pom_to_docker_image_test.py pom.xml",
+                        returnStdout: true
+                    ).trim()
+                    echo "[+] 사용 자바 버전: ${env.JAVA_VERSION}"
+
+                    env.IMAGE_TAG = sh(
+                        script: "python3 components/scripts/docker_tag.py ${env.JAVA_VERSION}",
+                        returnStdout: true
+                    ).trim()
+                    echo "[+] 이미지 태그: ${env.IMAGE_TAG}"
                 }
             }
         }
+
+        stage('📦 SBOM 생성 & DTrack 업로드') {
+            steps {
+                script {
+                    sh "bash components/scripts/run_cdxgen_test.sh ${env.IMAGE_TAG}"
+                    sh "./components/scripts/upload_to_dtrack.sh ${env.DTRACK_URL} ${env.DTRACK_UUID} ${env.DTRACK_APIKEY} sbom.json"
+                }
+            }
+        }
+
 
 
         stage('🐳 Docker Build') {
