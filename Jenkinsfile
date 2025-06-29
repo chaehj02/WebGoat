@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                     env.JAVA_VERSION = sh(
-                        script: "python3 components/scripts/pom_to_docker_image_test.py pom.xml",
+                        script: "python3 components/scripts/pom_to_docker_image.py pom.xml",
                         returnStdout: true
                     ).trim()
                     echo "[+] 사용 자바 버전: ${env.JAVA_VERSION}"
