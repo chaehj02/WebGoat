@@ -23,9 +23,11 @@ pipeline {
             steps { checkout scm }
         }
 
-        stage('🔨 Build JAR') {
-            steps { sh 'mvn clean package -DskipTests' }
-        }
+        stage('🔧 Build VulnerableApp') {
+    steps {
+        sh './gradlew build -x test'
+    }
+}
 
         stage('🐳 Docker Build & Push') {
             steps {
