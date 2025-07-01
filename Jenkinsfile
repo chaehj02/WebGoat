@@ -29,7 +29,6 @@ pipeline {
             }
         }
 
-       stages {
             stage('Generate SBOM via CDXGEN Docker') {
                 steps {
                     script {
