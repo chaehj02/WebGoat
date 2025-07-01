@@ -29,20 +29,18 @@ pipeline {
             }
         }
 
-            stage('Generate SBOM via CDXGEN Docker') {
-                steps {
-                    script {
-                        def repoUrl = scm.userRemoteConfigs[0].url
-                        def repoName = repoUrl.tokenize('/').last().replace('.git', '')
-                        sh """
-                            /home/ec2-user/test_run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}'
-                        """
-                    }
+        // 잘못된 중첩된 stages 제거, stage만 추가
+        stage('Generate SBOM via CDXGEN Docker') {
+            steps {
+                script {
+                    def repoUrl = scm.userRemoteConfigs[0].url
+                    def repoName = repoUrl.tokenize('/').last().replace('.git', '')
+                    sh """
+                        /home/ec2-user/test_run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}'
+                    """
                 }
             }
         }
-    }
-
 
         stage('🐳 Docker Build') {
             steps {
