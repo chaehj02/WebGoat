@@ -14,6 +14,14 @@ pipeline {
             }
         }
 
+        stage('🧪 SonarQube Analysis') {
+            agent { label 'SAST' }
+            steps {
+                script {
+                    load 'components/scripts/sonarqube_analysis.groovy'
+                }
+            }
+        }
 
         stage('🔨 Build JAR') {
             steps {
@@ -21,18 +29,18 @@ pipeline {
             }
         }
 
-        // 잘못된 중첩된 stages 제거, stage만 추가
-        stage('Generate SBOM via CDXGEN Docker') {
+        stage('🚀 Generate SBOM via CDXGEN Docker') {
+            agent { label 'SCA' }
             steps {
                 script {
                     def repoUrl = scm.userRemoteConfigs[0].url
                     def repoName = repoUrl.tokenize('/').last().replace('.git', '')
-                    sh """
-                        /var/lib/jenkins/test_run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}'
-                    """
+                    
+                    sh "/home/ec2-user/run_sbom_pipeline.sh ${repoUrl} ${repoName}"
                 }
             }
         }
+
 
         stage('🐳 Docker Build') {
             steps {
