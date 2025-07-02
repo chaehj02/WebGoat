@@ -36,7 +36,9 @@ pipeline {
                     def repoUrl = scm.userRemoteConfigs[0].url
                     def repoName = repoUrl.tokenize('/').last().replace('.git', '')
                     
-                    sh "/home/ec2-user/run_sbom_pipeline.sh ${repoUrl} ${repoName}"
+                    sh """
+                        /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}'
+                    """
                 }
             }
         }
