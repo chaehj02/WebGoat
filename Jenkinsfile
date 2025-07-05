@@ -19,12 +19,14 @@ pipeline {
                 sh 'components/scripts/Build_JAR.sh'
             }
         }
-
+        
         stage('🚀 SCA 병렬 실행') {
             agent { label 'SCA' }
             steps {
-                script {
-                   load './components/scripts/sca_parallel.groovy'
+                dir('WebGoat') {
+                    script {
+                        load 'components/scripts/sca_parallel.groovy' 
+                    }
                 }
             }
         }
