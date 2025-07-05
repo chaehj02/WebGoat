@@ -1,12 +1,18 @@
-def call() {
+def runScaJobs() {
+    def repoName = 'WebGoat'
+    def repoUrl = "https://github.com/WH-Hourglass/${repoName}.git"
+    def parallelCount = 2
+
     def jobs = [:]
 
-    for (int i = 1; i <= 2; i++) {
+    for (int i = 1; i <= parallelCount; i++) {
         def index = i
-        jobs["SCA-Run-${index}"] = {
-            node("SCA-agent${index}") {
-                stage("SCA-Run-${index}") {
-                    sh "/home/ec2-user/run_sbom_pipeline.sh"
+        def agent = "SCA-agent${(index % 2) + 1}"
+
+        jobs["SCA-${repoName}-${index}"] = {
+            node(agent) {
+                stage("SCA ${repoName}-${index}") {
+                    sh "bash components/scripts/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
                 }
             }
         }
@@ -14,3 +20,5 @@ def call() {
 
     parallel jobs
 }
+
+return this
