@@ -24,7 +24,7 @@ pipeline {
             agent { label 'SCA' }
             steps {
                 script {
-                    load 'components/scripts/sca_parallel.groovy'
+                   load './components/scripts/sca_parallel.groovy'
                 }
             }
         }
