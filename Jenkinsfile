@@ -24,9 +24,7 @@ pipeline {
             agent { label 'SCA' }
             steps {
                 script {
-                    sh 'ls -al components/scripts/sca_parallel.groovy' //오류 확인용
-                    def sca = load 'components/scripts/sca_parallel.groovy'
-                    sca()
+                    load 'components/scripts/sca_parallel.groovy'
                 }
             }
         }
