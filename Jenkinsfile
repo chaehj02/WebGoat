@@ -20,15 +20,21 @@ pipeline {
             }
         }
         
-        stage('🚀 SCA 병렬 실행') {
-            agent { label 'SCA' }
-            steps {
-                script {
-                    load 'WebGoat/components/scripts/sca_parallel.groovy'  
-                }
+    stage('🚀 SCA 병렬 실행') {
+        agent { label 'SCA' }
+        steps {
+            script {
+                def scaScriptPath = sh(
+                    script: 'find . -name sca_parallel.groovy | head -n1',
+                    returnStdout: true
+                ).trim()
+    
+                echo "📄 SCA 스크립트 경로: ${scaScriptPath}"
+                load scaScriptPath
             }
         }
-    
+    }
+
 
         stage('🐳 Docker Build') {
             steps {
