@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 detect_java_version() {
     local REPO_NAME="$1"
     local BUILD_ID="$2"
@@ -23,13 +25,13 @@ detect_java_version() {
     fi
 
     if [[ -n "$BUILD_FILE" ]]; then
-        JAVA_VERSION=$(python3 /home/ec2-user/components/scripts/pom_to_docker_image.py "$BUILD_FILE" 2>/dev/null | tr -d '\r')
+        JAVA_VERSION=$(python3 "$SCRIPT_DIR/pom_to_docker_image.py" "$BUILD_FILE" 2>/dev/null | tr -d '\r')
         if [[ -z "$JAVA_VERSION" ]]; then
             echo "[⚠️] Bedrock 기반 감지 실패 – 기본 java 사용"
             IMAGE_TAG="java"
         else
             echo "[✅] 감지된 Java 버전: $JAVA_VERSION"
-            IMAGE_TAG=$(python3 /home/ec2-user/components/scripts/docker_tag.py "$JAVA_VERSION" 2>/dev/null | tr -d '\r')
+            IMAGE_TAG=$(python3 "$SCRIPT_DIR/docker_tag.py" "$JAVA_VERSION" 2>/dev/null | tr -d '\r')
             [[ -z "$IMAGE_TAG" ]] && IMAGE_TAG="java"
         fi
     elif [[ -f "package.json" || -f "requirements.txt" || -f "pyproject.toml" || -f "go.mod" || -f "Cargo.toml" ]]; then
@@ -51,14 +53,18 @@ upload_sbom() {
     local REPO_NAME="$1"
     local BUILD_ID="$2"
 
-    # 환경변수 로딩
+    if [[ -z "$REPO_NAME" || -z "$BUILD_ID" ]]; then
+        echo "❌ upload_sbom 함수 호출 시 REPO_NAME과 BUILD_ID가 필요합니다."
+        return 1
+    fi
+
     source /home/ec2-user/.env
 
     local SBOM_FILE="/tmp/${REPO_NAME}/sbom_${REPO_NAME}_${BUILD_ID}.json"
 
     if [[ ! -f "$SBOM_FILE" ]]; then
         echo "❌ SBOM 파일이 존재하지 않습니다: $SBOM_FILE"
-        exit 1
+        return 1
     fi
 
     local PROJECT_VERSION="${BUILD_ID}_$(date +%Y%m%d_%H%M%S)"
@@ -71,4 +77,3 @@ upload_sbom() {
         -F "bom=@$SBOM_FILE" \
         -F "autoCreate=true"
 }
-
