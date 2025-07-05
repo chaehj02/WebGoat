@@ -14,3 +14,4 @@ def call() {
 
     parallel jobs
 }
+call()
