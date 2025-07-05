@@ -20,81 +20,35 @@ pipeline {
             }
         }
         
-        stage('🚀 SCA 병렬 실행') {
-            agent { label 'SCA' }
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Print Path Info') {
             steps {
                 script {
-                    def scaScriptPath = sh(script: "find . -name sca_parallel.groovy | head -n 1", returnStdout: true).trim()
-                    def sca = load(scaScriptPath)
-                    sca.call() 
+                    echo "✅ 현재 워크스페이스 경로: ${env.WORKSPACE}"
+                    sh "pwd"
+                    sh "ls -al"
                 }
             }
         }
-
-
-        stage('🐳 Docker Build') {
-            steps {
-                sh 'components/scripts/Docker_Build.sh'
-            }
-        }
-
-        stage('🔐 ECR Login') {
-            steps {
-                sh 'components/scripts/ECR_Login.sh'
-            }
-        }
-
-        stage('🚀 Push to ECR') {
-            steps {
-                sh 'components/scripts/Push_to_ECR.sh'
-            }
-        }
-
-        stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
-            agent { label 'DAST' }
-            steps {
-                // sh 'components/scripts/DAST_Zap_Scan.sh'
-                sh 'nohup components/scripts/DAST_Zap_Scan.sh > zap_bg.log 2>&1 &'
-            }
-        }
-
-        stage('🧩 Generate taskdef.json') {
+        stage('Check File Exists') {
             steps {
                 script {
-                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
-                    runTaskDefGen(env)
+                    def targetFile = "components/scripts/run_sbom_pipeline.sh"
+                    if (fileExists(targetFile)) {
+                        echo "✅ 파일 존재함: ${targetFile}"
+                    } else {
+                        echo "❌ 파일 없음: ${targetFile}"
+                        sh "find . -name '*run_sbom_pipeline.sh'"
+                    }
                 }
             }
-        }
-
-        stage('📄 Generate appspec.yaml') {
-            steps {
-                script {
-                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
-                    runAppSpecGen(env.REGION)
-                }
-            }
-        }
-
-        stage('📦 Bundle for CodeDeploy') {
-            steps {
-                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
-            }
-        }
-
-        stage('🚀 Deploy via CodeDeploy') {
-            steps {
-                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Successfully built, pushed, and deployed!"
-        }
-        failure {
-            echo "❌ Build or deployment failed. Check logs!"
         }
     }
 }
