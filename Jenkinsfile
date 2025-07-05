@@ -20,20 +20,16 @@ pipeline {
             }
         }
         
-    stage('🚀 SCA 병렬 실행') {
-        agent { label 'SCA' }
-        steps {
-            script {
-                def scaScriptPath = sh(
-                    script: 'find . -name sca_parallel.groovy | head -n1',
-                    returnStdout: true
-                ).trim()
-    
-                echo "📄 SCA 스크립트 경로: ${scaScriptPath}"
-                load scaScriptPath
+        stage('🚀 SCA 병렬 실행') {
+            agent { label 'SCA' }
+            steps {
+                script {
+                    def scaScriptPath = sh(script: "find . -name sca_parallel.groovy | head -n 1", returnStdout: true).trim()
+                    def sca = load(scaScriptPath)
+                    sca.call() 
+                }
             }
         }
-    }
 
 
         stage('🐳 Docker Build') {
