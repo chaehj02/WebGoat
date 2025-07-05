@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 REPO_URL="$1"
@@ -15,20 +14,19 @@ if [[ -z "$BUILD_ID" ]]; then
     BUILD_ID="$(date +%s%N)"
 fi
 
-# 함수 정의 불러오기
+# 현재 스크립트 디렉토리 기준
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/functions.sh"
 
 echo "[+] 클린 작업: /tmp/${REPO_NAME} 제거"
-rm -rf /tmp/${REPO_NAME}
+rm -rf "/tmp/${REPO_NAME}"
 
 echo "[+] Git 저장소 클론: ${REPO_URL}"
-git clone "${REPO_URL}" "/tmp/${REPO_NAME}"
+git clone "$REPO_URL" "/tmp/${REPO_NAME}"
 
 detect_java_version "$REPO_NAME" "$BUILD_ID"
 
-IMAGE_TAG=$(cat /tmp/cdxgen_image_tag_${REPO_NAME}_${BUILD_ID}.txt)
-
+IMAGE_TAG=$(cat "/tmp/cdxgen_image_tag_${REPO_NAME}_${BUILD_ID}.txt")
 echo "[+] 선택된 CDXGEN 이미지 태그: $IMAGE_TAG"
 echo "[+] REPO_NAME: $REPO_NAME"
 echo "[+] BUILD_ID: $BUILD_ID"
@@ -37,10 +35,10 @@ cd "/tmp/${REPO_NAME}"
 
 if [[ "$IMAGE_TAG" == "cli" ]]; then
     echo "[🚀] CDXGEN(CLI) 도커 실행"
-    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen:latest -o sbom_${REPO_NAME}_${BUILD_ID}.json
+    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen:latest -o "sbom_${REPO_NAME}_${BUILD_ID}.json"
 else
     echo "[🚀] CDXGEN(Java) 도커 실행 ($IMAGE_TAG)"
-    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen-"$IMAGE_TAG":latest -o sbom_${REPO_NAME}_${BUILD_ID}.json
+    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen-"$IMAGE_TAG":latest -o "sbom_${REPO_NAME}_${BUILD_ID}.json"
 fi
 
 echo "[+] Dependency-Track 컨테이너 상태 확인"
