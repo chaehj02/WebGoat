@@ -23,13 +23,12 @@ pipeline {
         stage('🚀 SCA 병렬 실행') {
             agent { label 'SCA' }
             steps {
-                dir('WebGoat') {
-                    script {
-                        load 'components/scripts/sca_parallel.groovy' 
-                    }
+                script {
+                    load 'WebGoat/components/scripts/sca_parallel.groovy'  
                 }
             }
         }
+    
 
         stage('🐳 Docker Build') {
             steps {
