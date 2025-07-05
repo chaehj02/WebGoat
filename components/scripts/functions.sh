@@ -50,15 +50,19 @@ detect_java_version() {
 upload_sbom() {
     local REPO_NAME="$1"
     local BUILD_ID="$2"
-    local SBOM_FILE="sbom_${REPO_NAME}_${BUILD_ID}.json"
+
+    # 환경변수 로딩
+    source /home/ec2-user/.env
+
+    local SBOM_FILE="/tmp/${REPO_NAME}/sbom_${REPO_NAME}_${BUILD_ID}.json"
 
     if [[ ! -f "$SBOM_FILE" ]]; then
         echo "❌ SBOM 파일이 존재하지 않습니다: $SBOM_FILE"
         exit 1
     fi
 
-    PROJECT_VERSION="${BUILD_ID}_$(date +%Y%m%d_%H%M%S)"
-    echo "[+] SBOM 업로드 중... (project: $REPO_NAME, version: $PROJECT_VERSION)"
+    local PROJECT_VERSION="${BUILD_ID}_$(date +%Y%m%d_%H%M%S)"
+    echo "🚀 SBOM 업로드 시작: $SBOM_FILE (projectVersion: $PROJECT_VERSION)"
 
     curl -X POST http://localhost:8080/api/v1/bom \
         -H "X-Api-Key: $DT_API_KEY" \
@@ -67,3 +71,4 @@ upload_sbom() {
         -F "bom=@$SBOM_FILE" \
         -F "autoCreate=true"
 }
+
