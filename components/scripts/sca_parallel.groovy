@@ -2,10 +2,9 @@ def runScaJobs() {
     def repoName = 'WebGoat'
     def repoUrl = "https://github.com/WH-Hourglass/${repoName}.git"
 
-    // find로 run_sbom_pipeline.sh 파일 경로 자동 찾기
     echo "📌 run_sbom_pipeline.sh 파일 경로 찾기"
     def scriptPath = sh(
-        script: "find ${env.WORKSPACE} -name 'run_sbom_pipeline.sh' -print -quit",  // 첫 번째로 찾은 경로 출력
+        script: "find ${env.WORKSPACE} -name 'run_sbom_pipeline.sh' -print -quit", 
         returnStdout: true
     ).trim()
 
@@ -30,9 +29,9 @@ def runScaJobs() {
                 stage("SCA ${repoName}-${index}") {
                     echo "▶️ 병렬 SCA 실행 – 대상: ${repoName}, 인덱스: ${index}, Agent: ${agent}"
 
-                    // 파일 경로로 이동하여 실행
-                    echo "📌 ${scriptPath}로 이동 후 실행"
-                    sh "cd $(dirname ${scriptPath}) && ./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
+                    // cd로 디렉토리 이동 후 실행
+                    echo "📌 ${scriptPath}로 이동"
+                    sh "cd \$(dirname ${scriptPath}) && ./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
                 }
             }
         }
