@@ -2,10 +2,15 @@ def runScaJobs() {
     def repoName = 'WebGoat'
     def repoUrl = "https://github.com/WH-Hourglass/${repoName}.git"
 
-    // 현재 작업 디렉토리 확인 (Jenkins의 WORKSPACE 환경 변수 사용)
-    echo "현재 작업 디렉토리 확인:"
-    echo "Jenkins Workspace: ${env.WORKSPACE}"
-    
+    // find로 run_sbom_pipeline.sh 파일 경로 자동 찾기
+    echo "📌 run_sbom_pipeline.sh 파일 경로 찾기"
+    def scriptPath = sh(
+        script: "find ${env.WORKSPACE} -name 'run_sbom_pipeline.sh' -print -quit",  // 첫 번째로 찾은 경로 출력
+        returnStdout: true
+    ).trim()
+
+    echo "📌 run_sbom_pipeline.sh 경로: ${scriptPath}"
+
     def commitCount = sh(
         script: "git rev-list --count HEAD ^HEAD~10",  
         returnStdout: true
@@ -25,9 +30,9 @@ def runScaJobs() {
                 stage("SCA ${repoName}-${index}") {
                     echo "▶️ 병렬 SCA 실행 – 대상: ${repoName}, 인덱스: ${index}, Agent: ${agent}"
 
-                    // WORKSPACE 환경 변수를 이용하여 스크립트 실행
-                    echo "📌 Jenkins WORKSPACE 경로로 run_sbom_pipeline.sh 실행"
-                    sh "${env.WORKSPACE}/components/scripts/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
+                    // 파일 경로로 이동하여 실행
+                    echo "📌 ${scriptPath}로 이동 후 실행"
+                    sh "cd $(dirname ${scriptPath}) && ./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
                 }
             }
         }
