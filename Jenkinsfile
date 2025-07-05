@@ -14,32 +14,86 @@ pipeline {
             }
         }
 
-        stage('📂 경로 디버깅') {
-            steps {
-                script {
-                    echo "📌 Jenkins workspace: ${env.WORKSPACE}"
-                    sh '''
-                        echo "✅ [Groovy에서 실행되는 경로: $(pwd)]"
-                        echo "📁 components/scripts 디렉토리 내용:"
-                        ls -al components/scripts || echo "❌ 디렉토리 없음"
-                        
-                        echo "📄 run_sbom_pipeline.sh 경로:"
-                        find . -name 'run_sbom_pipeline.sh' || echo "❌ 파일 없음"
-        
-                        echo "📄 functions.sh 경로:"
-                        find . -name 'functions.sh' || echo "❌ 파일 없음"
-        
-                        echo "📄 sca_parallel.groovy 경로:"
-                        find . -name 'sca_parallel.groovy' || echo "❌ 파일 없음"
-                    '''
-                }
-            }
-        }
-
         stage('🔨 Build JAR') {
             steps {
                 sh 'components/scripts/Build_JAR.sh'
             }
+        }
+        
+        stage('🚀 SCA 병렬 실행') {
+            agent { label 'SCA' }
+            steps {
+                script {
+                    def sca = load 'components/scripts/sca_parallel.groovy'
+                    sca.runScaJobs()
+                }
+            }
+        }
+
+
+        stage('🐳 Docker Build') {
+            steps {
+                sh 'components/scripts/Docker_Build.sh'
+            }
+        }
+
+        stage('🔐 ECR Login') {
+            steps {
+                sh 'components/scripts/ECR_Login.sh'
+            }
+        }
+
+        stage('🚀 Push to ECR') {
+            steps {
+                sh 'components/scripts/Push_to_ECR.sh'
+            }
+        }
+
+        stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
+            agent { label 'DAST' }
+            steps {
+                // sh 'components/scripts/DAST_Zap_Scan.sh'
+                sh 'nohup components/scripts/DAST_Zap_Scan.sh > zap_bg.log 2>&1 &'
+            }
+        }
+
+        stage('🧩 Generate taskdef.json') {
+            steps {
+                script {
+                    def runTaskDefGen = load 'components/functions/generateTaskDef.groovy'
+                    runTaskDefGen(env)
+                }
+            }
+        }
+
+        stage('📄 Generate appspec.yaml') {
+            steps {
+                script {
+                    def runAppSpecGen = load 'components/functions/generateAppspecAndWrite.groovy'
+                    runAppSpecGen(env.REGION)
+                }
+            }
+        }
+
+        stage('📦 Bundle for CodeDeploy') {
+            steps {
+                sh 'components/scripts/Bundle_for_CodeDeploy.sh'
+            }
+        }
+
+        stage('🚀 Deploy via CodeDeploy') {
+            steps {
+                sh 'components/scripts/Deploy_via_CodeDeploy.sh'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Successfully built, pushed, and deployed!"
+        }
+        failure {
+            echo "❌ Build or deployment failed. Check logs!"
         }
     }
 }
