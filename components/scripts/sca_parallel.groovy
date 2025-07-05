@@ -31,7 +31,7 @@ def runScaJobs() {
 
                     // cd로 디렉토리 이동 후 실행
                     echo "📌 ${scriptPath}로 이동"
-                    sh "cd \$(dirname ${scriptPath}) && ./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
+                    sh "cd ${env.WORKSPACE}/components/scripts && ls -al && ./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
                 }
             }
         }
