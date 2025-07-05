@@ -6,7 +6,7 @@ def call() {
         jobs["SCA-Run-${index}"] = {
             node("SCA-agent${index}") {
                 stage("SCA-Run-${index}") {
-                    sh "bash components/scripts/run_sbom_pipeline.sh"
+                  sh "bash \$WORKSPACE/components/scripts/run_sbom_pipeline.sh ..."
                 }
             }
         }
