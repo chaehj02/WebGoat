@@ -14,15 +14,6 @@ pipeline {
             }
         }
 
-        stage('🧪 SonarQube Analysis') {
-            agent { label 'SAST' }
-            steps {
-                script {
-                    load 'components/scripts/sonarqube_analysis.groovy'
-                }
-            }
-        }
-
         stage('🔨 Build JAR') {
             steps {
                 sh 'components/scripts/Build_JAR.sh'
