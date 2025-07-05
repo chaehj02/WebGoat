@@ -20,35 +20,27 @@ pipeline {
             }
         }
         
-pipeline {
-    agent any
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-        stage('Print Path Info') {
-            steps {
-                script {
-                    echo "✅ 현재 워크스페이스 경로: ${env.WORKSPACE}"
-                    sh "pwd"
-                    sh "ls -al"
-                }
-            }
-        }
-        stage('Check File Exists') {
-            steps {
-                script {
-                    def targetFile = "components/scripts/run_sbom_pipeline.sh"
-                    if (fileExists(targetFile)) {
-                        echo "✅ 파일 존재함: ${targetFile}"
-                    } else {
-                        echo "❌ 파일 없음: ${targetFile}"
-                        sh "find . -name '*run_sbom_pipeline.sh'"
-                    }
-                }
+    stage('📂 경로 디버깅') {
+        steps {
+            script {
+                echo "📌 Jenkins workspace: ${env.WORKSPACE}"
+                sh '''
+                    echo "✅ [Groovy에서 실행되는 경로: $(pwd)]"
+                    echo "📁 components/scripts 디렉토리 내용:"
+                    ls -al components/scripts || echo "❌ 디렉토리 없음"
+                    
+                    echo "📄 run_sbom_pipeline.sh 경로:"
+                    find . -name 'run_sbom_pipeline.sh' || echo "❌ 파일 없음"
+    
+                    echo "📄 functions.sh 경로:"
+                    find . -name 'functions.sh' || echo "❌ 파일 없음"
+    
+                    echo "📄 sca_parallel.groovy 경로:"
+                    find . -name 'sca_parallel.groovy' || echo "❌ 파일 없음"
+                '''
             }
         }
     }
-}
+
+
+        
