@@ -13,6 +13,14 @@ pipeline {
                 checkout scm
             }
         }
+        
+         stage('🧪 SonarQube Analysis') {
+            steps {
+                script {
+                    load 'components/sonarqube_analysis.groovy'
+                }
+            }
+        }
 
         stage('🔨 Build JAR') {
             steps {
