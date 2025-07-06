@@ -20,16 +20,30 @@ def runScaJobs() {
                 stage("SCA ${repoName}-${index}") {
                     echo "▶️ 병렬 SCA 실행 – 대상: ${repoName}, 인덱스: ${index}, Agent: ${agent}"
 
-                    // 워크스페이스 위치 확인
-                    sh "echo '현재 디렉토리:' && pwd && echo '📁 파일 목록:' && ls -al"
+                    // 소스코드 체크아웃 (보장)
+                    checkout scm
 
-                    // 스크립트 위치 확인 및 권한 부여
-                    def scriptPath = "${env.WORKSPACE}/components/scripts/run_sbom_pipeline.sh"
-                    sh "ls -al ${scriptPath} || echo '❌ 스크립트 없음'"
-                    sh "chmod +x ${scriptPath}"
+                    // run_sbom_pipeline.sh 파일 찾기 및 실행
+                    sh """
+                        echo '[*] 현재 디렉토리: $(pwd)'
+                        echo '[*] 파일 목록:' && ls -al
 
-                    // 실행
-                    sh "${scriptPath} '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
+                        SCRIPT_PATH="./components/scripts/run_sbom_pipeline.sh"
+
+                        if [ ! -f "\$SCRIPT_PATH" ]; then
+                          echo '⚠️ 예상 위치에 스크립트 없음. find로 탐색 시도...'
+                          SCRIPT_PATH=\$(find . -name 'run_sbom_pipeline.sh' -print -quit)
+                        fi
+
+                        if [ -z "\$SCRIPT_PATH" ]; then
+                          echo '❌ run_sbom_pipeline.sh 파일을 찾을 수 없습니다.'
+                          exit 1
+                        fi
+
+                        echo "✅ 실행할 스크립트: \$SCRIPT_PATH"
+                        chmod +x "\$SCRIPT_PATH"
+                        "\$SCRIPT_PATH" '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'
+                    """
                 }
             }
         }
