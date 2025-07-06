@@ -17,7 +17,7 @@ pipeline {
          stage('🧪 SonarQube Analysis') {
             steps {
                 script {
-                    load 'components/sonarqube_analysis.groovy'
+                    load 'components/scripts/sonarqube_analysis.groovy'
                 }
             }
         }
