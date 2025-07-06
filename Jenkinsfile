@@ -28,15 +28,15 @@ pipeline {
             }
         }
         
-        stage('🚀 SCA 병렬 실행') {
-            agent { label 'SCA' }
-            steps {
-                script {
-                    def sca = load 'components/scripts/sca_parallel.groovy'
-                    sca.runScaJobs()
-                }
-            }
-        }
+        // stage('🚀 SCA 병렬 실행') {
+        //     agent { label 'SCA' }
+        //     steps {
+        //         script {
+        //             def sca = load 'components/scripts/sca_parallel.groovy'
+        //             sca.runScaJobs()
+        //         }
+        //     }
+        // }
 
 
         stage('🐳 Docker Build') {
