@@ -14,6 +14,7 @@ def runScaJobs() {
     for (int i = 1; i <= parallelCount; i++) {
         def index = i
         def agent = "SCA-agent${(index % 2) + 1}"
+        def buildTag = "${env.BUILD_ID}-${index}"  // ✅ 변수로 미리 만들어야 에러 안 남
 
         jobs["SCA-${repoName}-${index}"] = {
             node(agent) {
@@ -25,7 +26,7 @@ def runScaJobs() {
 
                     // run_sbom_pipeline.sh 파일 찾기 및 실행
                     sh """
-                        echo '[*] 현재 디렉토리: $(pwd)'
+                        echo '[*] 현재 디렉토리: \$(pwd)'
                         echo '[*] 파일 목록:' && ls -al
 
                         SCRIPT_PATH="./components/scripts/run_sbom_pipeline.sh"
@@ -42,7 +43,7 @@ def runScaJobs() {
 
                         echo "✅ 실행할 스크립트: \$SCRIPT_PATH"
                         chmod +x "\$SCRIPT_PATH"
-                        "\$SCRIPT_PATH" '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'
+                        "\$SCRIPT_PATH" '${repoUrl}' '${repoName}' '${buildTag}'
                     """
                 }
             }
