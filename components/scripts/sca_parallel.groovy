@@ -28,10 +28,8 @@ def runScaJobs() {
             node(agent) {
                 stage("SCA ${repoName}-${index}") {
                     echo "▶️ 병렬 SCA 실행 – 대상: ${repoName}, 인덱스: ${index}, Agent: ${agent}"
+                    sh "./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
 
-                    // cd로 디렉토리 이동 후 실행
-                    echo "📌 ${scriptPath}로 이동"
-                    sh "cd /components/scripts && ls -al && ./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
                 }
             }
         }
