@@ -2,22 +2,13 @@ def runScaJobs() {
     def repoName = 'WebGoat'
     def repoUrl = "https://github.com/WH-Hourglass/${repoName}.git"
 
-    echo "📌 run_sbom_pipeline.sh 파일 경로 찾기"
-    def scriptPath = sh(
-        script: "find ${env.WORKSPACE} -name 'run_sbom_pipeline.sh' -print -quit", 
-        returnStdout: true
-    ).trim()
-
-    echo "📌 run_sbom_pipeline.sh 경로: ${scriptPath}"
-
+    echo "📌 커밋 수 계산 중"
     def commitCount = sh(
-        script: "git rev-list --count HEAD ^HEAD~10",  
+        script: "git rev-list --count HEAD ^HEAD~10",
         returnStdout: true
     ).trim().toInteger()
 
-    // 병렬 최대 2회까지만
-    def parallelCount = Math.min(commitCount, 2)
-
+    def parallelCount = Math.min(commitCount, 2) // 병렬 최대 2개
     def jobs = [:]
 
     for (int i = 1; i <= parallelCount; i++) {
@@ -28,8 +19,17 @@ def runScaJobs() {
             node(agent) {
                 stage("SCA ${repoName}-${index}") {
                     echo "▶️ 병렬 SCA 실행 – 대상: ${repoName}, 인덱스: ${index}, Agent: ${agent}"
-                    sh "./run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
 
+                    // 워크스페이스 위치 확인
+                    sh "echo '현재 디렉토리:' && pwd && echo '📁 파일 목록:' && ls -al"
+
+                    // 스크립트 위치 확인 및 권한 부여
+                    def scriptPath = "${env.WORKSPACE}/components/scripts/run_sbom_pipeline.sh"
+                    sh "ls -al ${scriptPath} || echo '❌ 스크립트 없음'"
+                    sh "chmod +x ${scriptPath}"
+
+                    // 실행
+                    sh "${scriptPath} '${repoUrl}' '${repoName}' '${env.BUILD_ID}-${index}'"
                 }
             }
         }
