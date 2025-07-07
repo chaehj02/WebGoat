@@ -1,7 +1,7 @@
 #!/bin/bash
 source components/dot.env
 
-if [ -z "$1" ]; then
+if [ -z "$DYNAMIC_IMAGE_TAG" ]; then
   echo "Error: IMAGE_TAG not provided as an argument."
   exit 1
 fi
