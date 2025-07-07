@@ -5,7 +5,7 @@ pipeline {
         JAVA_HOME   = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
         PATH        = "${env.JAVA_HOME}/bin:${env.PATH}"
         SSH_CRED_ID = "WH1_key"
-        IMAGE_TAG = "dev-${BUILD_NUMBER}"
+        DYNAMIC_IMAGE_TAG = "dev-${env.BUILD_NUMBER}-${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
     }
 
     stages {
