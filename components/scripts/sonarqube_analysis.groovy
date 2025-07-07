@@ -14,7 +14,7 @@ withSonarQubeEnv(env.SONARQUBE_ENV) {
         -Dsonar.projectKey=webgoat \
         -Dsonar.sources=. \
         -Dsonar.java.binaries=target/classes \
-        -Dsonar.java.libraries=lib/**/*.jar \
+        -Dsonar.java.libraries=target/dependency/*.jar \
         -Dsonar.python.version=3.9
     """
 }
