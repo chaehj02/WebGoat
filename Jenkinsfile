@@ -15,13 +15,13 @@ pipeline {
             }
         }
         
-        //stage('🧪 SonarQube Analysis') {
-        //    steps {
-        //        script {
-        //            load 'components/scripts/sonarqube_analysis.groovy'
-        //        }
-        //    }
-        //}
+        stage('🧪 SonarQube Analysis') {
+            steps {
+                script {
+                    load 'components/scripts/sonarqube_analysis.groovy'
+                }
+            }
+        }
 
         stage('🔨 Build JAR') {
             steps {
