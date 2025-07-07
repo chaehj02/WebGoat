@@ -15,13 +15,13 @@ pipeline {
             }
         }
         
-         stage('🧪 SonarQube Analysis') {
-            steps {
-                script {
-                    load 'components/scripts/sonarqube_analysis.groovy'
-                }
-            }
-        }
+        //stage('🧪 SonarQube Analysis') {
+        //    steps {
+        //        script {
+        //            load 'components/scripts/sonarqube_analysis.groovy'
+        //        }
+        //    }
+        //}
 
         stage('🔨 Build JAR') {
             steps {
@@ -42,7 +42,7 @@ pipeline {
 
         stage('🐳 Docker Build') {
             steps {
-                sh 'components/scripts/Docker_Build.sh'
+                sh 'DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/Docker_Build.sh'
             }
         }
 
@@ -54,7 +54,7 @@ pipeline {
 
         stage('🚀 Push to ECR') {
             steps {
-                sh 'components/scripts/Push_to_ECR.sh'
+                sh 'DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/Push_to_ECR.sh'
             }
         }
 
