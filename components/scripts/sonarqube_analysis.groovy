@@ -3,7 +3,7 @@ def scannerHome = tool 'MySonarScanner'
 def mvnHome = tool 'Maven3'
 
 sh """
-${mvnHome}/bin/mvn compile -DskipTests
+${mvnHome}/bin/mvn compile dependency:copy-dependencies -DoutputDirectory=target/dependency -DskipTests
 """
 
 
