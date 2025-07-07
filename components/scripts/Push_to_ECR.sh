@@ -1,3 +1,13 @@
 #!/bin/bash
 source components/dot.env
-docker push $ECR_REPO:$IMAGE_TAG
+
+if [ -z "$1" ]; then
+  echo "Error: IMAGE_TAG not provided as an argument."
+  exit 1
+fi
+DYNAMIC_IMAGE_TAG="$1" 
+
+echo "Pushing image: $ECR_REPO:$DYNAMIC_IMAGE_TAG"
+docker push "$ECR_REPO:$DYNAMIC_IMAGE_TAG"
+
+echo "Image pushed successfully!"
