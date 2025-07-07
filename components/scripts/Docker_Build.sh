@@ -5,8 +5,6 @@ set -o allexport
 source components/dot.env
 set +o allexport
 
-DYNAMIC_IMAGE_TAG="$1"
-
 if [ -z "$DYNAMIC_IMAGE_TAG" ]; then
   echo "Error: Dynamic IMAGE_TAG not provided as an argument to docker_build.sh."
   echo "Usage: docker_build.sh <DYNAMIC_IMAGE_TAG>"
