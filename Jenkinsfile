@@ -23,11 +23,7 @@ pipeline {
             steps { checkout scm }
         }
 
-        stage('🔧 Build VulnerableApp') {
-    steps {
-        sh './gradlew build -x test'
-    }
-}
+     
 
         stage('🐳 Docker Build & Push') {
             steps {
