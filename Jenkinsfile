@@ -29,15 +29,19 @@ pipeline {
             }
         }
         
-        // stage('🚀 SCA 병렬 실행') {
-        //     agent { label 'SCA' }
-        //     steps {
-        //         script {
-        //             def sca = load 'components/scripts/sca_parallel.groovy'
-        //             sca.runScaJobs()
-        //         }
-        //     }
-        // }
+        stage('🚀 Generate SBOM via CDXGEN Docker') {
+            agent { label 'SCA' }
+            steps {
+                script {
+                    def repoUrl = scm.userRemoteConfigs[0].url
+                    def repoName = repoUrl.tokenize('/').last().replace('.git', '')
+                    
+                    sh """
+                        /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}'
+                    """
+                }
+            }
+        }
 
 
         stage('🐳 Docker Build') {
