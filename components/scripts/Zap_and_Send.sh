@@ -12,40 +12,44 @@ ZAP_BIN="${ZAP_BIN:-$HOME/ZAP/zap.sh}"  # zap.sh 실행 경로
 S3_BUCKET="${S3_BUCKET:-my-bucket}"
 startpage="${1:-/}"
 
+echo "DEBUG: 변수 설정 완료"
+
 for try_port in {8081..8089}; do
-  echo "[DEBUG] 시도 중: $try_port"
+  echo "[DEBUG] 시도 중: $try_port"
 
-  in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>/dev/null)
+  # lsof 명령어의 stderr를 stdout으로 리다이렉트하여 에러 메시지 확인
+  in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>&1)
+  lsof_exit_code=$?
+  echo "DEBUG: lsof 실행 완료. 종료 코드: $lsof_exit_code, 출력 결과: $in_use_lsof" # 이 라인 추가
 
-  # docker ps 결과 직접 파싱 (docker 접근 실패에 안전)
-  in_use_docker=""
-  docker_output=$(docker ps --format '{{.Ports}}' 2>/dev/null || true)
-  if echo "$docker_output" | grep -E "[0-9\.]*:$try_port->" >/dev/null; then
-    in_use_docker=1
-  fi
-
-  echo "[DEBUG] lsof 결과: $in_use_lsof"
-  echo "[DEBUG] docker 결과: $in_use_docker"
-
-  if [ -z "$in_use_lsof" ] && [ -z "$in_use_docker" ]; then
-    port=$try_port
-    echo "[DEBUG] 사용 가능한 포트 발견: $port"
-
-    if [[ "$port" =~ ^[0-9]+$ ]]; then
-      zap_port=$((port + 10))
-      echo "[DEBUG] ZAP 포트: $zap_port"
-    else
-      echo "🚨 Error: port 값이 숫자가 아닙니다: '$port'"
-      exit 1
+  # lsof 명령어가 성공적으로 실행되었고, 결과가 없는 경우만 처리
+  if [ $lsof_exit_code -eq 0 ] && [ -z "$in_use_lsof" ]; then
+    # Docker 확인 로직 추가
+    in_use_docker=""
+    docker_output=$(docker ps --format '{{.Ports}}' 2>/dev/null || true)
+    if echo "$docker_output" | grep -E "[0-9\.]*:$try_port->" >/dev/null; then
+      in_use_docker=1
     fi
-    break
+    echo "[DEBUG] docker 결과: $in_use_docker"
+
+    if [ -z "$in_use_docker" ]; then
+      port=$try_port
+      echo "[DEBUG] 사용 가능한 포트 발견: $port"
+
+      if [[ "$port" =~ ^[0-9]+$ ]]; then
+        zap_port=$((port + 10))
+        echo "[DEBUG] ZAP 포트: $zap_port"
+      else
+        echo "🚨 Error: port 값이 숫자가 아닙니다: '$port'"
+        exit 1
+      fi
+      break
+    fi
+  elif [ $lsof_exit_code -ne 0 ]; then
+    echo "🚨 Error: lsof 명령어 실행 실패. 오류 메시지: $in_use_lsof"
+    exit 1 # lsof 실패 시 바로 종료
   fi
 done
-
-if [ -z "$port" ]; then
-  echo "❌ 사용 가능한 포트가 없습니다 (8081~8089)"
-  exit 1
-fi
 
 # 동적 변수 설정
 containerName="${BUILD_TAG}"
