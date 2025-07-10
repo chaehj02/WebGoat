@@ -31,3 +31,4 @@ if [[ "$STATUS" == "fail" ]]; then
 else
   echo "✅ 가드레일 통과"
 fi
+
