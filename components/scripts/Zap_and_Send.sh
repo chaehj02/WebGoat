@@ -16,14 +16,18 @@ echo "DEBUG: 변수 설정 완료"
 for try_port in {8081..8089}; do
   echo "[DEBUG] 시도 중: $try_port"
 
-  # lsof 명령어의 stderr를 stdout으로 리다이렉트하여 에러 메시지 확인
-  in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>&1)
+  # lsof 실행 (stderr 따로 저장)
+  lsof_stdout=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>lsof_err.log)
   lsof_exit_code=$?
-  echo "DEBUG: lsof 실행 완료. 종료 코드: $lsof_exit_code, 출력 결과: $in_use_lsof" # 이 라인 추가
+  lsof_stderr=$(<lsof_err.log)
+  rm -f lsof_err.log
 
-  # lsof 명령어가 성공적으로 실행되었고, 결과가 없는 경우만 처리
-  if [ $lsof_exit_code -eq 0 ] && [ -z "$in_use_lsof" ]; then
-    # Docker 확인 로직 추가
+  echo "[DEBUG] lsof 종료 코드: $lsof_exit_code"
+  echo "[DEBUG] lsof 출력: $lsof_stdout"
+  echo "[DEBUG] lsof 에러: $lsof_stderr"
+
+  if [ $lsof_exit_code -eq 0 ] && [ -z "$lsof_stdout" ]; then
+    # docker 검사
     in_use_docker=""
     docker_output=$(docker ps --format '{{.Ports}}' 2>/dev/null || true)
     if echo "$docker_output" | grep -E "[0-9\.]*:$try_port->" >/dev/null; then
@@ -39,16 +43,17 @@ for try_port in {8081..8089}; do
         zap_port=$((port + 10))
         echo "[DEBUG] ZAP 포트: $zap_port"
       else
-        echo "🚨 Error: port 값이 숫자가 아닙니다: '$port'"
+        echo "🚨 Error: port 값이 숫자가 아님: '$port'"
         exit 1
       fi
       break
     fi
   elif [ $lsof_exit_code -ne 0 ]; then
-    echo "🚨 Error: lsof 명령어 실행 실패. 오류 메시지: $in_use_lsof"
-    exit 1 # lsof 실패 시 바로 종료
+    echo "🚨 Error: lsof 실패 (exit=$lsof_exit_code): $lsof_stderr"
+    exit 1
   fi
 done
+
 
 # 동적 변수 설정
 containerName="${BUILD_TAG}"
