@@ -15,7 +15,7 @@ startpage="${1:-/}"
 echo "DEBUG: 변수 설정 완료"
 
 for try_port in {8081..8089}; do
-  echo "[DEBUG] 시도 중: $try_port"
+   echo "[DEBUG] 시도 중: $try_port"
 
   # lsof 명령어의 stderr를 stdout으로 리다이렉트하여 에러 메시지 확인
   in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>&1)
