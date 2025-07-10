@@ -15,13 +15,19 @@ startpage="${1:-/}"
 # 사용 가능한 웹앱 포트 찾기
 for try_port in {8081..8089}; do
   in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>/dev/null)
-  in_use_docker=$(docker ps --format '{{.Ports}}' | grep -w "$try_port")
+  in_use_docker=$(docker ps --format '{{.Ports}}' | grep -E "[0-9\.]*:$try_port->" || true)
 
   if [ -z "$in_use_lsof" ] && [ -z "$in_use_docker" ]; then
     port=$try_port
-    zap_port=$((port + 10))
+
+    if [[ "$port" =~ ^[0-9]+$ ]]; then
+      zap_port=$((port + 10))
+    else
+      echo "🚨 Error: port value '$port' is not a number"
+      exit 1
+    fi
     break
-  fi
+  fi  # ← 이 줄이 빠져 있었음!
 done
 
 
