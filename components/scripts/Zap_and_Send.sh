@@ -8,17 +8,17 @@ REGION="${REGION:-ap-northeast-2}"
 ECR_REPO="${ECR_REPO:?ECR_REPO를 설정하세요}"
 IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG를 설정하세요}"
 ZAP_SCRIPT="${ZAP_SCRIPT:-zap_scan.sh}"
-ZAP_BIN="${ZAP_BIN:-$HOME/ZAP/zap.sh}"  # zap.sh 실행 경로
+ZAP_BIN="${ZAP_BIN:-$HOME/ZAP/zap.sh}" # zap.sh 실행 경로
 S3_BUCKET="${S3_BUCKET:-my-bucket}"
 startpage="${1:-/}"
 
 echo "DEBUG: 변수 설정 완료"
 
 for try_port in {8081..8089}; do
-   echo "[DEBUG] 시도 중: $try_port"
+  echo "[DEBUG] 시도 중: $try_port"
 
-  # lsof 명령어의 stderr를 stdout으로 리다이렉트하여 에러 메시지 확인
-  in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>&1)
+  # lsof 명령어의 stderr를 stdout으로 리다이렉트하여 에러 메시지 확인
+  in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>&1)
   lsof_exit_code=$?
   echo "DEBUG: lsof 실행 완료. 종료 코드: $lsof_exit_code, 출력 결과: $in_use_lsof" # 이 라인 추가
 
@@ -71,7 +71,7 @@ docker run -d --name "$containerName" -p "${port}:8080" "$ECR_REPO:${IMAGE_TAG}"
 
 echo "[*] 웹앱 Health Check..."
 for j in {1..15}; do
-  if curl -s "http://localhost:$port" > /dev/null; then
+  if curl -s "http://localhost:$port" >/dev/null; then
     echo "✅ 웹앱 기동 완료 ($port)"
     break
   fi
@@ -85,8 +85,8 @@ if [ $j -eq 15 ]; then
 fi
 
 echo "[*] ZAP 데몬 실행 중..."
-nohup "$ZAP_BIN" -daemon -port "$zap_port" -host 0.0.0.0 -config api.disablekey=true > "$zap_log" 2>&1 &
-echo $! > "$zap_pidfile"
+nohup "$ZAP_BIN" -daemon -port "$zap_port" -host 0.0.0.0 -config api.disablekey=true >"$zap_log" 2>&1 &
+echo $! >"$zap_pidfile"
 sleep 5
 
 echo "[*] ZAP 스크립트 실행 ($ZAP_SCRIPT)"
