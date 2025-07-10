@@ -14,12 +14,16 @@ startpage="${1:-/}"
 
 # 사용 가능한 웹앱 포트 찾기
 for try_port in {8081..8089}; do
-  if ! lsof -i :"$try_port" >/dev/null; then
+  in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>/dev/null)
+  in_use_docker=$(docker ps --format '{{.Ports}}' | grep -w "$try_port")
+
+  if [ -z "$in_use_lsof" ] && [ -z "$in_use_docker" ]; then
     port=$try_port
     zap_port=$((port + 10))
     break
   fi
 done
+
 
 if [ -z "$port" ]; then
   echo "❌ 사용 가능한 포트가 없습니다 (8081~8089)"
