@@ -12,29 +12,30 @@ ZAP_BIN="${ZAP_BIN:-$HOME/ZAP/zap.sh}"  # zap.sh 실행 경로
 S3_BUCKET="${S3_BUCKET:-my-bucket}"
 startpage="${1:-/}"
 
-# 사용 가능한 웹앱 포트 찾기
 for try_port in {8081..8089}; do
+  echo "[DEBUG] 시도 중: $try_port"
+
   in_use_lsof=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>/dev/null)
   in_use_docker=$(docker ps --format '{{.Ports}}' | grep -E "[0-9\.]*:$try_port->" || true)
 
+  echo "[DEBUG] lsof 결과: $in_use_lsof"
+  echo "[DEBUG] docker 결과: $in_use_docker"
+
   if [ -z "$in_use_lsof" ] && [ -z "$in_use_docker" ]; then
     port=$try_port
+    echo "[DEBUG] 사용 가능한 포트 발견: $port"
 
     if [[ "$port" =~ ^[0-9]+$ ]]; then
       zap_port=$((port + 10))
+      echo "[DEBUG] ZAP 포트: $zap_port"
     else
       echo "🚨 Error: port value '$port' is not a number"
       exit 1
     fi
     break
-  fi  # ← 이 줄이 빠져 있었음!
+  fi
 done
 
-
-if [ -z "$port" ]; then
-  echo "❌ 사용 가능한 포트가 없습니다 (8081~8089)"
-  exit 1
-fi
 
 # 동적 변수 설정
 containerName="${BUILD_TAG}"
