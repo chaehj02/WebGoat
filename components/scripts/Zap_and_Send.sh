@@ -9,7 +9,7 @@ IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG를 설정하세요}"
 ZAP_SCRIPT="${ZAP_SCRIPT:-zap_scan.sh}"
 ZAP_BIN="${ZAP_BIN:-$HOME/ZAP/zap.sh}" # zap.sh 실행 경로
 S3_BUCKET="${S3_BUCKET:-my-bucket}"
-startpage="${1:-/}"
+startpage="${1:-}"
 
 echo "DEBUG: 변수 설정 완료"
 
@@ -82,7 +82,7 @@ docker run -d --name "$containerName" -p "${port}:8080" "$ECR_REPO:${IMAGE_TAG}"
 
 echo "[*] 웹앱 Health Check..."
 for j in {1..15}; do
-  if curl -s "http://localhost:$port" >/dev/null; then
+  if curl -s "http://localhost:$port/$startpage" >/dev/null; then
     echo "✅ 웹앱 기동 완료 ($port)"
     break
   fi
