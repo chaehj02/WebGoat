@@ -1,6 +1,6 @@
 #!/bin/bash
 source ./dot.env
-set -e
+set -ex
 
 # 기본값
 CONTAINER_NAME="${BUILD_TAG}"
