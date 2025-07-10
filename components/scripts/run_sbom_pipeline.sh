@@ -5,14 +5,6 @@ REPO_URL="$1"
 REPO_NAME="$2"
 BUILD_ID="$3"
 
-# --- 추가된 환경 변수 파싱 (--env 옵션) ---
-ENV_MODE="dev"
-for i in "${!@}"; do
-  if [[ "${!i}" == "--env" ]]; then
-    ENV_MODE="${!((i+1))}"
-  fi
-done
-
 if [[ -z "$REPO_URL" || -z "$REPO_NAME" ]]; then
     echo "❌ REPO_URL과 REPO_NAME을 인자로 전달해야 합니다."
     exit 1
@@ -22,10 +14,10 @@ if [[ -z "$BUILD_ID" ]]; then
     BUILD_ID="$(date +%s%N)"
 fi
 
+# 현재 스크립트 디렉토리 기준
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/functions.sh"
 
-echo "[+] 실행 환경: $ENV_MODE"
 echo "[+] 클린 작업: /tmp/${REPO_NAME} 제거"
 rm -rf "/tmp/${REPO_NAME}"
 
@@ -43,4 +35,23 @@ cd "/tmp/${REPO_NAME}"
 
 if [[ "$IMAGE_TAG" == "cli" ]]; then
     echo "[🚀] CDXGEN(CLI) 도커 실행"
-    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen:lat
+    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen:latest -o "sbom_${REPO_NAME}_${BUILD_ID}.json"
+else
+    echo "[🚀] CDXGEN(Java) 도커 실행 ($IMAGE_TAG)"
+    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen-"$IMAGE_TAG":latest -o "sbom_${REPO_NAME}_${BUILD_ID}.json"
+fi
+
+echo "[+] Dependency-Track 컨테이너 상태 확인"
+if docker ps --format '{{.Names}}' | grep -q '^dependency-track$'; then
+    echo "[+] Dependency-Track 컨테이너 실행 중"
+elif docker ps -a --format '{{.Names}}' | grep -q '^dependency-track$'; then
+    echo "[+] Dependency-Track 멈춤 상태 → 기동"
+    docker start dependency-track
+else
+    echo "[+] Dependency-Track 컨테이너 없음 → 새 기동"
+    docker run -d --name dependency-track -p 8080:8080 dependencytrack/bundled:latest
+fi
+
+upload_sbom "$REPO_NAME" "$BUILD_ID"
+
+echo "[✅] SBOM 파이프라인 완료"
