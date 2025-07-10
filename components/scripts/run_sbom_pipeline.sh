@@ -45,6 +45,8 @@ fi
 echo "[+] Dependency-Track 업로드"
 bash /home/ec2-user/upload-sbom.sh "$REPO_NAME"
 
+echo "[✅] SBOM 파이프라인 완료"
+
 echo "[🔍] 가드레일 검사 시작"
 
 PROJECT_NAME="$REPO_NAME"
