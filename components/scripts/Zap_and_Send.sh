@@ -10,7 +10,7 @@ IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG를 설정하세요}"
 ZAP_SCRIPT="${ZAP_SCRIPT:-zap_scan.sh}"
 ZAP_BIN="${ZAP_BIN:-$HOME/ZAP/zap.sh}"  # zap.sh 실행 경로
 S3_BUCKET="${S3_BUCKET:-my-bucket}"
-startpage="${1:/}"
+startpage="${1:-/}"
 
 # 사용 가능한 웹앱 포트 찾기
 for try_port in {8081..8089}; do
