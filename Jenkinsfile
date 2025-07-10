@@ -40,6 +40,40 @@ pipeline {
                     }
                 }
 
+        stage('🛡️ SCA Guardrail Check (Lambda)') {
+    agent { label 'SCA' }
+    steps {
+        script {
+            def payload = """
+            {
+                "project_name": "WebGoat",
+                "api_key": "${env.DEPTRACK_API_KEY}",
+                "server": "${env.DEPTRACK_URL}"
+            }
+            """.stripIndent().trim()
+
+            writeFile file: 'lambda_input.json', text: payload
+
+            sh """
+            aws lambda invoke \
+              --function-name sca_guardrail \
+              --payload fileb://lambda_input.json \
+              lambda_result.json
+            """
+
+            def result = readFile('lambda_result.json')
+            echo "Lambda 결과: ${result}"
+
+            def status = new groovy.json.JsonSlurper().parseText(result).status
+            if (status == 'fail') {
+                error("❌ 가드레일 통과 실패 (OWASP Top 10 관련 취약점 존재)")
+            } else {
+                echo "✅ 가드레일 통과"
+            }
+        }
+    }
+}
+
         stage('🐳 Docker Build') {
             steps {
                 sh 'components/scripts/Docker_Build.sh'
