@@ -16,43 +16,50 @@ echo "DEBUG: 변수 설정 완료"
 for try_port in {8081..8089}; do
   echo "[DEBUG] 시도 중: $try_port"
 
-  # lsof 실행 (stderr 따로 저장)
-  lsof_stdout=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>lsof_err.log)
+  set +e
+  lsof_stdout=$(lsof -iTCP:$try_port -sTCP:LISTEN -n -P 2>/dev/null)
   lsof_exit_code=$?
-  lsof_stderr=$(<lsof_err.log)
-  rm -f lsof_err.log
+  set -e
 
   echo "[DEBUG] lsof 종료 코드: $lsof_exit_code"
   echo "[DEBUG] lsof 출력: $lsof_stdout"
-  echo "[DEBUG] lsof 에러: $lsof_stderr"
 
-  if [ $lsof_exit_code -eq 0 ] && [ -z "$lsof_stdout" ]; then
-    # docker 검사
-    in_use_docker=""
-    docker_output=$(docker ps --format '{{.Ports}}' 2>/dev/null || true)
-    if echo "$docker_output" | grep -E "[0-9\.]*:$try_port->" >/dev/null; then
-      in_use_docker=1
-    fi
-    echo "[DEBUG] docker 결과: $in_use_docker"
-
-    if [ -z "$in_use_docker" ]; then
-      port=$try_port
-      echo "[DEBUG] 사용 가능한 포트 발견: $port"
-
-      if [[ "$port" =~ ^[0-9]+$ ]]; then
-        zap_port=$((port + 10))
-        echo "[DEBUG] ZAP 포트: $zap_port"
-      else
-        echo "🚨 Error: port 값이 숫자가 아님: '$port'"
-        exit 1
-      fi
-      break
-    fi
+  # "포트 사용 안 함" 상황 → 정상 처리
+  if [ $lsof_exit_code -ne 0 ] && [ -z "$lsof_stdout" ]; then
+    echo "[DEBUG] 포트 $try_port 는 사용 중 아님 (lsof 정상)"
   elif [ $lsof_exit_code -ne 0 ]; then
-    echo "🚨 Error: lsof 실패 (exit=$lsof_exit_code): $lsof_stderr"
+    echo "🚨 Error: lsof 명령 실패 (예외 상황)"
     exit 1
   fi
+
+  # 이 포트가 사용 중이면 다음 포트로
+  if [ -n "$lsof_stdout" ]; then
+    continue
+  fi
+
+  # docker 검사
+  in_use_docker=""
+  docker_output=$(docker ps --format '{{.Ports}}' 2>/dev/null || true)
+  if echo "$docker_output" | grep -E "[0-9\.]*:$try_port->" >/dev/null; then
+    in_use_docker=1
+  fi
+  echo "[DEBUG] docker 결과: $in_use_docker"
+
+  if [ -z "$in_use_docker" ]; then
+    port=$try_port
+    echo "[DEBUG] 사용 가능한 포트 발견: $port"
+
+    if [[ "$port" =~ ^[0-9]+$ ]]; then
+      zap_port=$((port + 10))
+      echo "[DEBUG] ZAP 포트: $zap_port"
+    else
+      echo "🚨 Error: port 값이 숫자가 아님: '$port'"
+      exit 1
+    fi
+    break
+  fi
 done
+
 
 
 # 동적 변수 설정
