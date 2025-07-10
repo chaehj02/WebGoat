@@ -35,6 +35,14 @@ pipeline {
                 """
             }
         }
+        stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
+            agent { label 'DAST' }
+            steps {
+                // sh 'DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/DAST_Zap_Scan.sh'
+                //sh 'nohup components/scripts/DAST_Zap_Scan.sh > zap_bg.log 2>&1 &'
+                sh 'components/scripts/DAST_Zap_Scan.sh WebGoat'
+            }
+        }
 
 
         stage('🧩 Generate taskdef.json') {
