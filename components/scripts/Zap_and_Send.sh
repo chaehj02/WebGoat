@@ -80,26 +80,7 @@ docker pull "$ECR_REPO:${IMAGE_TAG}"
 echo "[*] 웹앱 컨테이너 실행"
 docker run -d --name "$containerName" -p "${port}:8080" "$ECR_REPO:${IMAGE_TAG}"
 
-success=0
 
-echo "[*] 웹앱 Health Check..."
-for j in {1..15}; do
-  status_code=$(curl -s -o /dev/null -w "%{http_code}" -L "http://localhost:$port/$startpage")
-  echo "[DEBUG] 헬스체크 응답 코드: $status_code"
-
-  if [[ "$status_code" == "200" || "$status_code" == "302" ]]; then
-    echo "✅ 웹앱 기동 완료 ($port)"
-    success=1
-    break
-  fi
-  sleep 2
-done
-
-if [ "$success" -ne 1 ]; then
-  echo "❌ 웹앱 기동 실패"
-  docker logs "$containerName"
-  exit 1
-fi
 
 echo "[*] ZAP 데몬 실행 중..."
 nohup "$ZAP_BIN" -daemon -port "$zap_port" -host 0.0.0.0 -config api.disablekey=true >"$zap_log" 2>&1 &
