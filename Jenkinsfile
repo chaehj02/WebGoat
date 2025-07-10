@@ -40,7 +40,7 @@ pipeline {
             steps {
                 // sh 'DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/DAST_Zap_Scan.sh'
                 //sh 'nohup components/scripts/DAST_Zap_Scan.sh > zap_bg.log 2>&1 &'
-                sh 'components/scripts/DAST_Zap_Scan.sh WebGoat'
+                sh 'components/scripts/Zap_and_Send.sh WebGoat'
             }
         }
 
