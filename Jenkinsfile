@@ -8,6 +8,7 @@ pipeline {
         DYNAMIC_IMAGE_TAG = "dev-${env.BUILD_NUMBER}-${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
     }
     // 테스트용 주석
+    // 테스트용 주석2
 
     stages {
         stage('📦 Checkout') {
