@@ -7,6 +7,7 @@ pipeline {
         SSH_CRED_ID = "WH1_key"
         DYNAMIC_IMAGE_TAG = "dev-${env.BUILD_NUMBER}-${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
     }
+    // 테스트용 주석
 
     stages {
         stage('📦 Checkout') {
