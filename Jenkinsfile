@@ -21,15 +21,15 @@ pipeline {
             }
         }
         
-       stage('🧪 SonarQube Background') {
+       stage('🧪 SonarQube Background Analysis') {
     agent { label 'SAST' }
     steps {
         withSonarQubeEnv('WH_sonarqube') {
             sh """
-                echo "export SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN}" > sonar_env.sh
-                echo "export SONAR_HOST_URL=${SONAR_HOST_URL}" >> sonar_env.sh
-                chmod +x sonar_env.sh
-                nohup bash -c "source sonar_env.sh && bash components/scripts/run_sonar_pipeline.sh" > sonar_pipeline.log 2>&1 &
+                nohup env \\
+                    SONAR_AUTH_TOKEN='${SONAR_AUTH_TOKEN}' \\
+                    SONAR_HOST_URL='${SONAR_HOST_URL}' \\
+                    bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
             """
         }
     }
