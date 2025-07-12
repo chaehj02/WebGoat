@@ -5,6 +5,7 @@ set -e
 #     → SONAR_AUTH_TOKEN, SONAR_HOST_URL이 환경변수로 자동 전달됨
 
 # 🛠️ 도구 경로 설정
+export PATH=$PATH:/opt/sonar-scanner/bin
 SCANNER_HOME=$(which sonar-scanner)
 MVN_HOME=$(which mvn)
 
