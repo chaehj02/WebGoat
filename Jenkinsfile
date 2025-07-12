@@ -22,6 +22,7 @@ pipeline {
         }
         
        stage('🧪 SonarQube Background') {
+    agent { label 'SAST' }
     steps {
         withSonarQubeEnv(env.SONARQUBE_ENV) {
             sh '''
