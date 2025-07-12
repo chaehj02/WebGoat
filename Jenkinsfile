@@ -24,7 +24,7 @@ pipeline {
        stage('🧪 SonarQube Background') {
     agent { label 'SAST' }
     steps {
-        withSonarQubeEnv(env.SONARQUBE_ENV) {
+        withSonarQubeEnv('WH_sonarqube') {
             sh """
                 echo "export SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN}" > sonar_env.sh
                 echo "export SONAR_HOST_URL=${SONAR_HOST_URL}" >> sonar_env.sh
