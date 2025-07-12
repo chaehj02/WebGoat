@@ -21,33 +21,14 @@ pipeline {
             }
         }
         
-       stage('SAST Background Analysis') {
-    agent none
-    steps {
-        script {
-            parallel(
-                // SAST는 병렬로 따로 실행
-                sast: {
-                    node('SAST') {
-                        withSonarQubeEnv('WH_sonarqube') {
-                            sh '''
-                                echo "export SONAR_AUTH_TOKEN='${SONAR_AUTH_TOKEN}'" > sonar_env.sh
-                                echo "export SONAR_HOST_URL='${SONAR_HOST_URL}'" >> sonar_env.sh
-                                chmod +x sonar_env.sh
-                                source ./sonar_env.sh
-                                bash components/scripts/run_sonar_pipeline.sh
-                            '''
-                        }
-                    }
-                },
-                // 병렬 블록이 끝나기를 기다리지 않게 하기 위해 빈 태스크를 추가
-                dummy: {
-                    // 아무것도 안 함
+       stage('🧪 SonarQube Analysis') {
+            steps {
+                script {
+                    load 'components/scripts/sonarqube_analysis.groovy'
                 }
-            )
+            }
         }
-    }
-}
+
         stage('🔨 Build JAR') {
             steps {
                 sh 'components/scripts/Build_JAR.sh'
