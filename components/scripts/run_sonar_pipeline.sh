@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
 
-# 🔐 Jenkins에서 withSonarQubeEnv(...) 블록 안에서 실행되도록 가정합니다.
-#     → SONAR_AUTH_TOKEN, SONAR_HOST_URL이 환경변수로 자동 전달됨
+echo "--- 디버깅: 수신된 환경 변수 확인 ---"
+echo "SONAR_HOST_URL: [${SONAR_HOST_URL:-'값이 비어있음'}]"
+echo "SONAR_AUTH_TOKEN 길이: [${#SONAR_AUTH_TOKEN}]"
+echo "SONAR_AUTH_TOKEN 일부: [${SONAR_AUTH_TOKEN:0:4}****]" 
+echo "-------------------------------------------"
 
 # 🛠️ 도구 경로 설정
 export PATH=$PATH:/opt/sonar-scanner/bin
