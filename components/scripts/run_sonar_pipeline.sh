@@ -9,7 +9,8 @@ echo "-------------------------------------------"
 
 # 🛠️ 도구 경로 설정
 export PATH=$PATH:/opt/sonar-scanner/bin
-SCANNER_HOME=$(which sonar-scanner)
+SCANNER_HOME="/opt/sonar-scanner/bin/sonar-scanner"
+echo "[DEBUG] SonarScanner 경로: $SCANNER_HOME"
 MVN_HOME=$(which mvn)
 
 # 📦 Maven 의존성 복사 (테스트 제외)
