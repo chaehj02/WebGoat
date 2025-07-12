@@ -22,7 +22,6 @@ pipeline {
         }
         
        stage('🧪 SonarQube Background Analysis') {
-    agent { label 'SAST' }
     steps {
         withSonarQubeEnv('WH_sonarqube') {
             sh """
