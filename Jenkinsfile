@@ -21,19 +21,17 @@ pipeline {
             }
         }
         
-       stage('🧪 SonarQube Background Analysis') {
+       stage('🧪 SonarQube Background') {
     steps {
-        withSonarQubeEnv('WH_sonarqube') {
-            sh """
-                nohup env \\
-                    PATH=\$PATH:/opt/sonar-scanner/bin:/usr/local/bin:/usr/bin \\
-                    SONAR_AUTH_TOKEN='${SONAR_AUTH_TOKEN}' \\
-                    SONAR_HOST_URL='${SONAR_HOST_URL}' \\
-                    bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
-            """
+        withSonarQubeEnv(env.SONARQUBE_ENV) {
+            sh '''
+                chmod +x components/scripts/run_sonar_pipeline.sh
+                nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
+            '''
         }
     }
 }
+        
         stage('🔨 Build JAR') {
             steps {
                 sh 'components/scripts/Build_JAR.sh'
