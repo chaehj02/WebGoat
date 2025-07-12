@@ -24,12 +24,10 @@ pipeline {
        stage('🧪 SonarQube Background') {
     agent { label 'SAST' }
     steps {
-        withSonarQubeEnv(env.SONARQUBE_ENV) {
-            sh '''
-                chmod +x components/scripts/run_sonar_pipeline.sh
-                nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
-            '''
-        }
+        sh '''
+            chmod +x components/scripts/run_sonar_pipeline.sh
+            nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
+        '''
     }
 }
 
