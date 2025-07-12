@@ -21,13 +21,17 @@ pipeline {
             }
         }
         
-        stage('🧪 SonarQube Analysis') {
-            steps {
-                script {
-                    load 'components/scripts/sonarqube_analysis.groovy'
-                }
-            }
+       stage('🧪 SonarQube Background') {
+    steps {
+        withSonarQubeEnv(env.SONARQUBE_ENV) {
+            sh '''
+                chmod +x components/scripts/run_sonar_pipeline.sh
+                nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
+            '''
         }
+    }
+}
+
 
         stage('🔨 Build JAR') {
             steps {
