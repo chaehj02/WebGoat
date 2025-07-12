@@ -25,16 +25,12 @@ pipeline {
     agent { label 'SAST' }
     steps {
         withSonarQubeEnv(env.SONARQUBE_ENV) {
-            sh '''
-                chmod +x components/scripts/run_sonar_pipeline.sh
-
-                # Sonar 환경변수 파일로 저장
-                echo "export SONAR_AUTH_TOKEN=$SONAR_AUTH_TOKEN" > sonar_env.sh
-                echo "export SONAR_HOST_URL=$SONAR_HOST_URL" >> sonar_env.sh
+            sh """
+                echo "export SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN}" > sonar_env.sh
+                echo "export SONAR_HOST_URL=${SONAR_HOST_URL}" >> sonar_env.sh
                 chmod +x sonar_env.sh
-
-                nohup bash -c "source ./sonar_env.sh && bash components/scripts/run_sonar_pipeline.sh" > sonar_pipeline.log 2>&1 &
-            '''
+                nohup bash -c "source sonar_env.sh && bash components/scripts/run_sonar_pipeline.sh" > sonar_pipeline.log 2>&1 &
+            """
         }
     }
 }
