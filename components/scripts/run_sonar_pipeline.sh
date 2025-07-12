@@ -1,16 +1,11 @@
 #!/bin/bash
 set -e
 
-echo "--- 디버깅: 수신된 환경 변수 확인 ---"
-echo "SONAR_HOST_URL: [${SONAR_HOST_URL:-'값이 비어있음'}]"
-echo "SONAR_AUTH_TOKEN 길이: [${#SONAR_AUTH_TOKEN}]"
-echo "SONAR_AUTH_TOKEN 일부: [${SONAR_AUTH_TOKEN:0:4}****]" 
-echo "-------------------------------------------"
+# 🔐 Jenkins에서 withSonarQubeEnv(...) 블록 안에서 실행되도록 가정합니다.
+#     → SONAR_AUTH_TOKEN, SONAR_HOST_URL이 환경변수로 자동 전달됨
 
 # 🛠️ 도구 경로 설정
-export PATH=$PATH:/opt/sonar-scanner/bin
-SCANNER_HOME="/opt/sonar-scanner/bin/sonar-scanner"
-echo "[DEBUG] SonarScanner 경로: $SCANNER_HOME"
+SCANNER_HOME=$(which sonar-scanner)
 MVN_HOME=$(which mvn)
 
 # 📦 Maven 의존성 복사 (테스트 제외)
@@ -25,9 +20,7 @@ $SCANNER_HOME \
   -Dsonar.sources=. \
   -Dsonar.java.binaries=target/classes \
   -Dsonar.java.libraries=target/dependency/*.jar \
-  -Dsonar.python.version=3.9 \
-  -Dsonar.token=$SONAR_AUTH_TOKEN
-
+  -Dsonar.python.version=3.9
 
 # 📄 분석 결과 API로 수집
 timestamp=$(date +%F_%H-%M-%S)
