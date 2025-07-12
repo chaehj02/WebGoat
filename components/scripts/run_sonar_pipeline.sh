@@ -22,6 +22,7 @@ $SCANNER_HOME \
   -Dsonar.java.binaries=target/classes \
   -Dsonar.java.libraries=target/dependency/*.jar \
   -Dsonar.python.version=3.9
+  -Dsonar.token=$SONAR_AUTH_TOKEN 
 
 # 📄 분석 결과 API로 수집
 timestamp=$(date +%F_%H-%M-%S)
