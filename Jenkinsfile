@@ -21,14 +21,20 @@ pipeline {
             }
         }
         
-       stage('🧪 SonarQube Analysis') {
-            steps {
-                script {
-                    load 'components/scripts/sonarqube_analysis.groovy'
-                }
-            }
+       stage('🧪 SonarQube Background Analysis') {
+    agent { label 'SAST' }
+    steps {
+        withSonarQubeEnv('WH_sonarqube') {
+            sh """
+                nohup env \\
+                    PATH=\$PATH:/opt/sonar-scanner/bin:/usr/local/bin:/usr/bin \\
+                    SONAR_AUTH_TOKEN='${SONAR_AUTH_TOKEN}' \\
+                    SONAR_HOST_URL='${SONAR_HOST_URL}' \\
+                    bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
+            """
         }
-
+    }
+}
         stage('🔨 Build JAR') {
             steps {
                 sh 'components/scripts/Build_JAR.sh'
