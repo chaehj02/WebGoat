@@ -38,20 +38,25 @@ pipeline {
             }
         }
         
-        stage('🚀 Generate SBOM via CDXGEN Docker') {
-            agent { label 'SCA' }
-            steps {
-                script {
-                    def repoUrl = scm.userRemoteConfigs[0].url
-                    def repoName = repoUrl.tokenize('/').last().replace('.git', '')
-                    
-                    sh """
-                        /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}'
-                    """
+        stage('🧪 병렬 실행: SBOM 별도') {
+            parallel {
+                stage('🚀 Generate SBOM') {
+                    agent { label 'SCA' }
+                    steps {
+                        script {
+                            def repoUrl = scm.userRemoteConfigs[0].url
+                            def repoName = repoUrl.tokenize('/').last().replace('.git', '')
+
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                sh """
+                                    /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}' 
+                                """
+                            }
+                        }
+                    }
                 }
             }
         }
-
 
         stage('🐳 Docker Build') {
             steps {
