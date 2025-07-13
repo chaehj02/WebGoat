@@ -27,7 +27,6 @@ pipeline {
         withSonarQubeEnv(env.SONARQUBE_ENV) {
             sh '''
                 chmod +x components/scripts/run_sonar_pipeline.sh
-                source sonar_env.sh
                 nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>&1 &
             '''
         }
