@@ -57,10 +57,11 @@ pipeline {
                                     def repoUrl = env.REPO_URL
 
                                     node('SCA') {
-                                        echo "🔧 SBOM 생성 시작: Commit ${cid}, Build ${bid}"
-                                        sh """
-                                            /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${rname}' '${bid}' '${cid}'
-                                        """
+                                                    sh """
+                                                        echo "[+] SBOM 생성 시작: Commit ${cid}, Build ${bid}"
+                                                        rm -rf /tmp/${rname} || true
+                                                        /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${rname}' '${bid}' '${cid}'
+                                                    """
                                     }
                                 }
                             }
