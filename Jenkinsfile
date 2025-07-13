@@ -46,14 +46,17 @@ pipeline {
                         script {
                             def repoUrl = scm.userRemoteConfigs[0].url
                             def repoName = repoUrl.tokenize('/').last().replace('.git', '')
-
+                            def buildId = env.BUILD_NUMBER
+                            def repoDir = "/tmp/${repoName}_${buildId}"
+                        
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh """
-                                    /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${repoName}' '${env.BUILD_NUMBER}' 
+                                    /home/ec2-user/run_sbom_pipeline1.sh '${repoUrl}' '${repoName}' '${buildId}' '${repoDir}'
                                 """
                             }
+                        
                         }
-                    }
+                  }
                 }
             }
         }
