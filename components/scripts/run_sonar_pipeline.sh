@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
 
-SCANNER_HOME=$(which sonar-scanner)
-MVN_HOME=$(which mvn)
+echo "[🧪 DEBUG] PATH에 SonarScanner 추가"
+export PATH=$PATH:/opt/sonar-scanner/bin
+
+SCANNER_HOME="/opt/sonar-scanner/bin/sonar-scanner"
+echo "[🧪 DEBUG] SonarScanner 경로: $SCANNER_HOME"
 
 echo "[*] Maven compile + dependency 복사"
 $MVN_HOME compile dependency:copy-dependencies -DoutputDirectory=target/dependency -DskipTests
