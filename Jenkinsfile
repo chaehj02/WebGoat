@@ -4,7 +4,7 @@ pipeline {
     environment {
         JAVA_HOME   = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
         PATH        = "${env.JAVA_HOME}/bin:${env.PATH}"
-        SSH_CRED_ID = "WH1_key"
+        SSH_CRED_ID = "WH_1_key"
         DYNAMIC_IMAGE_TAG = "dev-${env.BUILD_NUMBER}-${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
         REPO_URL = 'https://github.com/WH-Hourglass/WebGoat.git' 
         BRANCH = 'SCA'
