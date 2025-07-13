@@ -95,12 +95,11 @@ pipeline {
 
 
         
-        stage('🐳 Docker Build') {
+       stage('🐳 Docker Build') {
             steps {
-                sh 'components/scripts/Docker_Build.sh'
+                sh 'DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/Docker_Build.sh'
             }
         }
-
  
 
       
