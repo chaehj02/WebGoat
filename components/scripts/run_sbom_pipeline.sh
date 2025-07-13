@@ -14,6 +14,12 @@ if [[ -z "$BUILD_ID" ]]; then
     BUILD_ID="$(date +%s%N)"
 fi
 
+LOG_FILE="/tmp/sbom_runlog_${REPO_NAME}_${BUILD_ID}.log"
+mkdir -p /tmp  # 로그 디렉토리 보장
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "📌 로그 기록 시작: $LOG_FILE"
+
 # 현재 스크립트 디렉토리 기준
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/functions.sh"
