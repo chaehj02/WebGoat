@@ -15,7 +15,8 @@ $SCANNER_HOME \
   -Dsonar.sources=. \
   -Dsonar.java.binaries=target/classes \
   -Dsonar.java.libraries=target/dependency/*.jar \
-  -Dsonar.python.version=3.9
+  -Dsonar.python.version=3.9 \
+  -Dsonar.token=$SONAR_AUTH_TOKEN
 
 timestamp=$(date +%F_%H-%M-%S)
 REPORT_FILE="sonar_issues_${timestamp}.json"
