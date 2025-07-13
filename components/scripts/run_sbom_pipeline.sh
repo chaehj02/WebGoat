@@ -4,6 +4,7 @@ set -e
 REPO_URL="$1"
 REPO_NAME="$2"
 BUILD_ID="$3"
+COMMIT_ID="$4"  # 병렬 실행 시 커밋 ID 전달됨
 
 if [[ -z "$REPO_URL" || -z "$REPO_NAME" ]]; then
     echo "❌ REPO_URL과 REPO_NAME을 인자로 전달해야 합니다."
@@ -14,37 +15,41 @@ if [[ -z "$BUILD_ID" ]]; then
     BUILD_ID="$(date +%s%N)"
 fi
 
-LOG_FILE="/tmp/sbom_runlog_${REPO_NAME}_${BUILD_ID}.log"
-mkdir -p /tmp  # 로그 디렉토리 보장
-exec > >(tee -a "$LOG_FILE") 2>&1
-
-echo "📌 로그 기록 시작: $LOG_FILE"
-
-# 현재 스크립트 디렉토리 기준
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/functions.sh"
 
-echo "[+] 클린 작업: /tmp/${REPO_NAME} 제거"
-rm -rf "/tmp/${REPO_NAME}"
+REPO_DIR="/tmp/${REPO_NAME}_${BUILD_ID}"
+LOG_FILE="/tmp/sbom_runlog_${REPO_NAME}_${BUILD_ID}.log"
 
-echo "[+] Git 저장소 클론: ${REPO_URL}"
-git clone "$REPO_URL" "/tmp/${REPO_NAME}"
+mkdir -p "$REPO_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "📌 로그 기록 시작: $LOG_FILE"
+echo "[+] 클린 작업: ${REPO_DIR} 제거"
+rm -rf "$REPO_DIR"
+
+echo "[+] Git 저장소 클론: ${REPO_URL} → ${REPO_DIR}"
+git clone "$REPO_URL" "$REPO_DIR"
+cd "$REPO_DIR"
+
+if [[ -n "$COMMIT_ID" ]]; then
+    echo "[+] 커밋 체크아웃: $COMMIT_ID"
+    git checkout "$COMMIT_ID"
+fi
 
 detect_java_version "$REPO_NAME" "$BUILD_ID"
 
 IMAGE_TAG=$(cat "/tmp/cdxgen_image_tag_${REPO_NAME}_${BUILD_ID}.txt")
 echo "[+] 선택된 CDXGEN 이미지 태그: $IMAGE_TAG"
-echo "[+] REPO_NAME: $REPO_NAME"
-echo "[+] BUILD_ID: $BUILD_ID"
 
-cd "/tmp/${REPO_NAME}"
+SBOM_FILE="${REPO_DIR}/sbom_${REPO_NAME}_${BUILD_ID}.json"
 
 if [[ "$IMAGE_TAG" == "cli" ]]; then
     echo "[🚀] CDXGEN(CLI) 도커 실행"
-    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen:latest -o "sbom_${REPO_NAME}_${BUILD_ID}.json"
+    docker run --rm -v "${REPO_DIR}:/app" ghcr.io/cyclonedx/cdxgen:latest -o "$SBOM_FILE"
 else
     echo "[🚀] CDXGEN(Java) 도커 실행 ($IMAGE_TAG)"
-    docker run --rm -v "$(pwd):/app" ghcr.io/cyclonedx/cdxgen-"$IMAGE_TAG":latest -o "sbom_${REPO_NAME}_${BUILD_ID}.json"
+    docker run --rm -v "${REPO_DIR}:/app" ghcr.io/cyclonedx/cdxgen-${IMAGE_TAG}:latest -o "$SBOM_FILE"
 fi
 
 echo "[+] Dependency-Track 컨테이너 상태 확인"
@@ -58,6 +63,6 @@ else
     docker run -d --name dependency-track -p 8080:8080 dependencytrack/bundled:latest
 fi
 
-upload_sbom "$REPO_NAME" "$BUILD_ID"
+upload_sbom "$REPO_NAME" "$BUILD_ID" "$REPO_DIR"
 
 echo "[✅] SBOM 파이프라인 완료"
