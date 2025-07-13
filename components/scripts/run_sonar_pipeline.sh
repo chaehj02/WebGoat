@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# 🔁 sonar_env.sh 내부 환경변수 불러오기
-if [[ -f sonar_env.sh ]]; then
-  source sonar_env.sh
-else
-  echo "[⚠️] sonar_env.sh 파일이 없습니다. 환경변수 누락될 수 있음."
-fi
 
 echo "[🧪 DEBUG] PATH에 SonarScanner 추가"
 export PATH=$PATH:/opt/sonar-scanner/bin
