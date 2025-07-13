@@ -29,7 +29,7 @@ pipeline {
                 chmod +x components/scripts/run_sonar_pipeline.sh
                 export SONAR_AUTH_TOKEN=$SONAR_AUTH_TOKEN;
                 export SONAR_HOST_URL=$SONAR_HOST_URL;
-                BUILD_ID=dontKillMe nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>error.log &
+                nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>error.log &
             '''
         }
     }
@@ -52,7 +52,7 @@ pipeline {
                     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                         sh """
                             echo "[+] SBOM 생성 시작 (nohup)"
-                            BUILD_ID=dontKillMe nohup /home/ec2-user/run_sbom_pipeline1.sh '${repoUrl}' '${repoName}' '${buildId}' > /tmp/sbom_${repoName}_${buildId}.log 2>&1 &
+                            nohup /home/ec2-user/run_sbom_pipeline1.sh '${repoUrl}' '${repoName}' '${buildId}' > /tmp/sbom_${repoName}_${buildId}.log 2>&1 &
                         """
                     }
                 }
