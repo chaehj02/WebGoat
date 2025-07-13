@@ -29,7 +29,7 @@ pipeline {
                 chmod +x components/scripts/run_sonar_pipeline.sh
                 export SONAR_AUTH_TOKEN=$SONAR_AUTH_TOKEN;
                 export SONAR_HOST_URL=$SONAR_HOST_URL;
-                nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>error.log &
+                BUILD_ID=dontKillMe nohup bash components/scripts/run_sonar_pipeline.sh > sonar_pipeline.log 2>error.log &
             '''
         }
     }
