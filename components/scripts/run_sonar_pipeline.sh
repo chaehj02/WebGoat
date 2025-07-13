@@ -8,6 +8,7 @@ SCANNER_HOME="/opt/sonar-scanner/bin/sonar-scanner"
 echo "[🧪 DEBUG] SonarScanner 경로: $SCANNER_HOME"
 
 echo "[*] Maven compile + dependency 복사"
+MVN_HOME=$(which mvn)
 $MVN_HOME compile dependency:copy-dependencies -DoutputDirectory=target/dependency -DskipTests
 
 # 🧪 SonarQube 분석
