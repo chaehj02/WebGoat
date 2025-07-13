@@ -22,7 +22,56 @@ pipeline {
                 sh 'components/scripts/Build_JAR.sh'
             }
         }
-        
+                stage('🚀 Generate SBOM for each commit') {
+            steps {
+                script {
+                    sh """
+                        rm -rf recent-commits && mkdir recent-commits
+                        git clone --quiet --branch ${env.BRANCH} ${env.REPO_URL} recent-commits
+                    """
+
+                    dir('recent-commits') {
+                        def commits = sh(
+                            script: "git log ${env.GIT_PREVIOUS_COMMIT}..${env.GIT_COMMIT} --pretty=format:'%H'",
+                            returnStdout: true
+                        ).trim().split("\n")
+
+                        echo "📌 변경된 커밋 목록:\n${commits.join('\n')}"
+
+                        if (commits.size() == 0 || commits[0] == "") {
+                            echo "✅ 변경된 커밋이 없어 SBOM 작업 생략"
+                        } else {
+                            def jobs = [:]
+                            for (int i = 0; i < commits.size(); i++) {
+                                def index = i
+                                def commitId = commits[index]
+                                def buildId = "${env.BUILD_NUMBER}-${index}"
+                                def repoName = env.REPO_URL.tokenize('/').last().replace('.git', '')
+
+                                jobs["SBOM-${index}"] = {
+                                    def cid = commitId
+                                    def bid = buildId
+                                    def rname = repoName
+                                    def repoUrl = env.REPO_URL
+
+                                    node('SCA') {
+                                        echo "🔧 SBOM 생성 시작: Commit ${cid}, Build ${bid}"
+                                        sh """
+                                            /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${rname}' '${bid}' '${cid}'
+                                        """
+                                    }
+                                }
+                            }
+
+                            parallel jobs
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /*
         stage('🧪 병렬 실행 제거: SBOM 생성 nohup') {
             agent { label 'SCA' }
             steps {
@@ -40,9 +89,10 @@ pipeline {
                     }
                 }
             }
-        }
+        } */
 
 
+        
         stage('🐳 Docker Build') {
             steps {
                 sh 'components/scripts/Docker_Build.sh'
