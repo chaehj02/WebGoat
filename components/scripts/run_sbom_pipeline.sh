@@ -89,15 +89,11 @@ echo "[+] 컨테이너 락 획득 시도..."
 
 echo "[+] 컨테이너 준비 완료"
 
-# 날짜 태그 생성 (YYMMDD 형식)
-DATE_TAG=$(date +"%y%m%d")
-TAG="date:${DATE_TAG}"
-
-# SBom 업로드 (upload_sbom 함수 호출 시 락 사용. 동시 업로드 방지)
+# upload_sbom 함수 호출 시 락 사용 (동시 업로드 방지)
 echo "[+] SBOM 업로드 시작 (락 사용)"
 (
     flock -x -w 60 201 || exit 1
-    upload_sbom "$REPO_NAME" "$BUILD_ID" "$REPO_DIR" "$TAG"
+    upload_sbom "$REPO_NAME" "$BUILD_ID" "$REPO_DIR"
     echo "[+] SBOM 업로드 완료: $REPO_NAME"
 ) 201>"${LOCK_FILE}.upload"
 
