@@ -5,11 +5,13 @@ pipeline {
         JAVA_HOME   = "/usr/lib/jvm/java-17-amazon-corretto.x86_64"
         PATH        = "${env.JAVA_HOME}/bin:${env.PATH}"
         SSH_CRED_ID = "WH_1_key"
-        REPO_URL    = 'https://github.com/WH-Hourglass/WebGoat.git' 
-        BRANCH      = 'SCA'
+        DYNAMIC_IMAGE_TAG = "dev-${env.BUILD_NUMBER}-${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
+        REPO_URL = 'https://github.com/WH-Hourglass/WebGoat.git'
+        BRANCH = 'SCA'
     }
 
     stages {
+
         stage('📦 Checkout') {
             steps {
                 checkout scm
@@ -25,13 +27,16 @@ pipeline {
         stage('🚀 Generate SBOM for each commit') {
             steps {
                 script {
-                    // 변경된 커밋 범위 추출
+                    // 변경된 커밋 목록 추출
                     def commits = sh(
                         script: "git log ${env.GIT_PREVIOUS_COMMIT}..${env.GIT_COMMIT} --pretty=format:'%H'",
                         returnStdout: true
                     ).trim().split("\n")
 
+                    // 빈 항목 제거
                     commits = commits.findAll { it != null && it.trim() != "" }
+
+                    // 변경된 커밋이 없을 경우 현재 HEAD로 대체
                     if (commits.size() == 0) {
                         echo "⚠️ 변경된 커밋이 없어 – HEAD 커밋(${env.GIT_COMMIT})으로 대체"
                         commits = [env.GIT_COMMIT]
@@ -39,34 +44,32 @@ pipeline {
 
                     echo "📌 처리할 커밋 목록 (${commits.size()}개):\n${commits.join('\n')}"
 
+                    // 병렬 작업 정의
                     def jobs = [:]
                     def repoName = env.REPO_URL.tokenize('/').last().replace('.git', '')
 
                     for (int i = 0; i < commits.size(); i++) {
                         def index = i
                         def commitId = commits[index]
-                        def shortHash = commitId.take(7)
                         def buildId = "${env.BUILD_NUMBER}-${index}"
+                        def shortHash = commitId.take(7)
                         def uniqueWorkspace = "workspace_${buildId}_${shortHash}"
+
+                        // ✅ 병렬 고유화된 REPO_NAME 생성
+                        def rname = "${repoName}_${buildId}_${shortHash}"
+                        def repoUrl = env.REPO_URL
 
                         jobs["SBOM-${index}-${shortHash}"] = {
                             node('SCA') {
                                 try {
-                                    def now = new Date()
-                                    def dateTag = now.format("yyMMdd", TimeZone.getTimeZone("Asia/Seoul"))
-
-                                    def version = "${buildId}_${shortHash}"
-                                    def rname = repoName  // 고정된 프로젝트명
-                                    def repoUrl = env.REPO_URL
-                                    def workspace = uniqueWorkspace
-
                                     sh """
-                                        echo "[+] SBOM 생성 시작: Commit ${commitId.take(7)}, Build ${buildId}"
-                                        echo "[+] 작업 디렉터리: ${workspace}"
-                                        rm -rf /tmp/${workspace} || true
-                                        mkdir -p /tmp/${workspace}
+                                        echo "[+] SBOM 생성 시작: Commit ${shortHash}, Build ${buildId}"
+                                        echo "[+] 작업 디렉터리: ${uniqueWorkspace}"
 
-                                        cd /tmp/${workspace}
+                                        rm -rf /tmp/${uniqueWorkspace} || true
+                                        mkdir -p /tmp/${uniqueWorkspace}
+
+                                        cd /tmp/${uniqueWorkspace}
                                         git clone --quiet --branch ${env.BRANCH} ${repoUrl} repo
                                         cd repo
                                         git checkout ${commitId}
@@ -74,14 +77,15 @@ pipeline {
                                         echo "[+] 체크아웃 완료: \$(git rev-parse --short HEAD)"
 
                                         /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${rname}' '${buildId}' '${commitId}'
-                                    """
 
+                                        echo "[+] SBOM 생성 완료: ${buildId}"
+                                    """
                                 } catch (Exception e) {
                                     echo "❌ SBOM 생성 실패 (${buildId}): ${e.getMessage()}"
                                 } finally {
                                     sh """
-                                        echo "[+] 정리 작업: ${workspace}"
-                                        rm -rf /tmp/${workspace} || true
+                                        echo "[+] 정리 작업: ${uniqueWorkspace}"
+                                        rm -rf /tmp/${uniqueWorkspace} || true
                                     """
                                 }
                             }
