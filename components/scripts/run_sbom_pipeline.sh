@@ -91,8 +91,9 @@ echo "[+] 컨테이너 준비 완료"
 
 # 날짜 태그 생성 (YYMMDD 형식)
 DATE_TAG=$(date +"%y%m%d")
+TAG="date:${DATE_TAG}"
 
-# upload_sbom 함수 호출 시 락 사용 (동시 업로드 방지)
+# SBom 업로드 (upload_sbom 함수 호출 시 락 사용. 동시 업로드 방지)
 echo "[+] SBOM 업로드 시작 (락 사용)"
 (
     flock -x -w 60 201 || exit 1
