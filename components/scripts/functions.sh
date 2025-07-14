@@ -52,28 +52,30 @@ detect_java_version() {
 upload_sbom() {
     local REPO_NAME="$1"
     local BUILD_ID="$2"
+    local REPO_DIR="$3"
+    local TAG="$4"  # 예: date:250714
 
-    if [[ -z "$REPO_NAME" || -z "$BUILD_ID" ]]; then
-        echo "❌ upload_sbom 함수 호출 시 REPO_NAME과 BUILD_ID가 필요합니다."
+    if [[ -z "$REPO_NAME" || -z "$BUILD_ID" || -z "$REPO_DIR" ]]; then
+        echo "❌ upload_sbom 함수 호출 시 REPO_NAME, BUILD_ID, REPO_DIR가 필요합니다."
         return 1
     fi
 
     source /home/ec2-user/.env
 
-    local SBOM_FILE="/tmp/${REPO_NAME}/sbom_${REPO_NAME}_${BUILD_ID}.json"
-
+    local SBOM_FILE="${REPO_DIR}/sbom_${REPO_NAME}_${BUILD_ID}.json"
     if [[ ! -f "$SBOM_FILE" ]]; then
         echo "❌ SBOM 파일이 존재하지 않습니다: $SBOM_FILE"
         return 1
     fi
 
-    local PROJECT_VERSION="${BUILD_ID}_$(date +%Y%m%d_%H%M%S)"
-    echo "🚀 SBOM 업로드 시작: $SBOM_FILE (projectVersion: $PROJECT_VERSION)"
+    local PROJECT_VERSION="${BUILD_ID}"
+    echo "🚀 SBOM 업로드 시작: $SBOM_FILE (projectVersion: $PROJECT_VERSION, tag: $TAG)"
 
     curl -X POST http://localhost:8080/api/v1/bom \
         -H "X-Api-Key: $DT_API_KEY" \
         -F "projectName=$REPO_NAME" \
         -F "projectVersion=$PROJECT_VERSION" \
+        -F "tags=$TAG" \
         -F "bom=@$SBOM_FILE" \
         -F "autoCreate=true"
 }
