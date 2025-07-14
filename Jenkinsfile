@@ -52,48 +52,46 @@ pipeline {
                         def index = i
                         def commitId = commits[index]
                         def buildId = "${env.BUILD_NUMBER}-${index}"
-                        def uniqueWorkspace = "workspace_${buildId}_${commitId.take(7)}"
+                        def shortHash = commitId.take(7)
+                        def uniqueWorkspace = "workspace_${buildId}_${shortHash}"
 
-                        jobs["SBOM-${index}-${commitId.take(7)}"] = {
-                            def cid = commitId
-                            def bid = buildId
-                            def rname = repoName
-                            def repoUrl = env.REPO_URL
-                            def workspace = uniqueWorkspace
+                        // ✅ 병렬 고유화된 REPO_NAME 생성
+                        def rname = "${repoName}_${buildId}_${shortHash}"
+                        def repoUrl = env.REPO_URL
 
+                        jobs["SBOM-${index}-${shortHash}"] = {
                             node('SCA') {
                                 try {
                                     sh """
-                                        echo "[+] SBOM 생성 시작: Commit ${cid.take(7)}, Build ${bid}"
-                                        echo "[+] 작업 디렉터리: ${workspace}"
+                                        echo "[+] SBOM 생성 시작: Commit ${shortHash}, Build ${buildId}"
+                                        echo "[+] 작업 디렉터리: ${uniqueWorkspace}"
 
-                                        rm -rf /tmp/${workspace} || true
-                                        mkdir -p /tmp/${workspace}
+                                        rm -rf /tmp/${uniqueWorkspace} || true
+                                        mkdir -p /tmp/${uniqueWorkspace}
 
-                                        cd /tmp/${workspace}
+                                        cd /tmp/${uniqueWorkspace}
                                         git clone --quiet --branch ${env.BRANCH} ${repoUrl} repo
                                         cd repo
-                                        git checkout ${cid}
+                                        git checkout ${commitId}
 
                                         echo "[+] 체크아웃 완료: \$(git rev-parse --short HEAD)"
 
-                                        /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${rname}' '${bid}' '${cid}'
+                                        /home/ec2-user/run_sbom_pipeline.sh '${repoUrl}' '${rname}' '${buildId}' '${commitId}'
 
-                                        echo "[+] SBOM 생성 완료: ${bid}"
+                                        echo "[+] SBOM 생성 완료: ${buildId}"
                                     """
                                 } catch (Exception e) {
-                                    echo "❌ SBOM 생성 실패 (${bid}): ${e.getMessage()}"
+                                    echo "❌ SBOM 생성 실패 (${buildId}): ${e.getMessage()}"
                                 } finally {
                                     sh """
-                                        echo "[+] 정리 작업: ${workspace}"
-                                        rm -rf /tmp/${workspace} || true
+                                        echo "[+] 정리 작업: ${uniqueWorkspace}"
+                                        rm -rf /tmp/${uniqueWorkspace} || true
                                     """
                                 }
                             }
                         }
                     }
 
-                    // 병렬 실행
                     echo "🚀 ${jobs.size()}개의 SBOM 작업을 병렬로 실행합니다..."
                     parallel jobs
                     echo "✅ 모든 SBOM 작업이 완료되었습니다."
