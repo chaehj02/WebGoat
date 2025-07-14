@@ -47,6 +47,12 @@ pipeline {
         stage('🔍 ZAP 스캔 및 SecurityHub 전송') {
             agent { label 'DAST' }
             steps {
+                sh '''
+                        set -a
+                    source components/dot.env
+                      set +a
+                      aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REPO"
+                    '''
                 //sh 'DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/DAST_Zap_Scan.sh'
                 sh nohup bash -c "DYNAMIC_IMAGE_TAG=${DYNAMIC_IMAGE_TAG} components/scripts/DAST_Zap_Scan.sh" > zap_bg.log 2>&1 &
 
