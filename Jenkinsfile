@@ -1,4 +1,5 @@
-#nohup이랑 멀티 빌드 합친 ver
+// nohup이랑 멀티 빌드 합친 ver
+
 pipeline {
     agent { label 'master' }
 
