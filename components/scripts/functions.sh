@@ -52,8 +52,7 @@ detect_java_version() {
 upload_sbom() {
     local REPO_NAME="$1"
     local BUILD_ID="$2"
-    local REPO_DIR="$3"
-    local TAG="$4"  # 예: date:250714
+    local TAG="$3"
 
     if [[ -z "$REPO_NAME" || -z "$BUILD_ID" || -z "$REPO_DIR" ]]; then
         echo "❌ upload_sbom 함수 호출 시 REPO_NAME, BUILD_ID, REPO_DIR가 필요합니다."
