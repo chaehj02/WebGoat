@@ -52,7 +52,6 @@ detect_java_version() {
 upload_sbom() {
     local REPO_NAME="$1"
     local BUILD_ID="$2"
-    local TAG="$3"
 
     if [[ -z "$REPO_NAME" || -z "$BUILD_ID" || -z "$REPO_DIR" ]]; then
         echo "❌ upload_sbom 함수 호출 시 REPO_NAME, BUILD_ID, REPO_DIR가 필요합니다."
@@ -74,7 +73,6 @@ upload_sbom() {
         -H "X-Api-Key: $DT_API_KEY" \
         -F "projectName=$REPO_NAME" \
         -F "projectVersion=$PROJECT_VERSION" \
-        -F "tags=$TAG" \
         -F "bom=@$SBOM_FILE" \
         -F "autoCreate=true"
 }
