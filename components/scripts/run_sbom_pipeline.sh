@@ -97,7 +97,7 @@ TAG="date:${DATE_TAG}"
 echo "[+] SBOM 업로드 시작 (락 사용)"
 (
     flock -x -w 60 201 || exit 1
-    upload_sbom "$REPO_NAME" "$BUILD_ID" "$REPO_DIR" "date:$DATE_TAG"
+    upload_sbom "$REPO_NAME" "$BUILD_ID" "$REPO_DIR" "$TAG"
     echo "[+] SBOM 업로드 완료: $REPO_NAME"
 ) 201>"${LOCK_FILE}.upload"
 
